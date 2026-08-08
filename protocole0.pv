@@ -1,0 +1,18 @@
+(* Protocole 0 *)
+(*set traceDisplay = long.*)
+
+free c: channel.
+
+free m: bitstring [private].
+query attacker(m).
+
+let processA()=
+     out(c,m).
+
+let processB()=
+     in (c, x:bitstring).
+
+process
+    processA | processB
+
+(* Comme prévu on remarque que l'attaquant peut trouver le message *)

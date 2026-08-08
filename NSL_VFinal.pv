@@ -1,0 +1,76 @@
+set traceDisplay = long.
+
+type skey.
+type pkey.
+
+free c : channel.
+free skA : skey [private].
+free skB : skey [private].
+
+fun pk(skey) : pkey.
+fun aenc(bitstring, pkey) : bitstring.
+reduc forall m : bitstring, sk : skey;
+      adec(aenc(m, pk(sk)), sk) = m.
+
+(* ===================================================== *)
+(*   Événements                                          *)
+(* ===================================================== *)
+
+event A_start(pkey, bitstring).
+event A_end(pkey, bitstring, bitstring).
+event B_start(pkey, bitstring, bitstring).
+event B_end(pkey, bitstring).
+
+(* ===================================================== *)
+(*   Queries                                             *)
+(* ===================================================== *)
+
+query secret Na.
+query secret Nb.
+
+query na : bitstring; 
+    event(B_end(pk(skA), na)) ==> event(A_start(pk(skB), na)).
+
+query na : bitstring, nb : bitstring; 
+    event(A_end(pk(skB), na, nb)) ==> event(B_start(pk(skA), na, nb)).
+
+let processA(skA : skey) =
+    in(c, pkX : pkey);
+    if pkX <> pk(skA) then
+    (
+        new Na : bitstring;
+        event A_start(pkX, Na);
+        out(c, aenc((Na, pk(skA)), pkX));
+        in(c, msg2 : bitstring);
+        (* Correction Lowe : on extrait et vérifie l'identité de B *)
+        let (=Na, Nb : bitstring, =pkX) = adec(msg2, skA) in
+        event A_end(pkX, Na, Nb);
+        out(c, aenc(Nb, pkX))
+    ).
+
+let processB(skB : skey) =
+    in(c, msg1 : bitstring);
+    let (Na : bitstring, pkX : pkey) = adec(msg1, skB) in
+    if pkX <> pk(skB) then  
+    (
+        new Nb : bitstring;
+        event B_start(pkX, Na, Nb);
+        (* Correction Lowe : B ajoute sa propre clé publique *)
+        out(c, aenc((Na, Nb, pk(skB)), pkX));
+        in(c, msg3 : bitstring);
+        let (=Nb) = adec(msg3, skB) in
+        event B_end(pkX, Na)
+    ).
+
+(* ===================================================== *)
+(*   Processus principal                                 *)
+(* ===================================================== *)
+
+process
+    out(c, pk(skA));
+    out(c, pk(skB));
+    (
+        !processA(skA)
+        |
+        !processB(skB)
+    )
