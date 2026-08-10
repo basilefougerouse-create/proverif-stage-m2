@@ -1,0 +1,236 @@
+free c: channel.
+
+type nonce.
+type key.
+type mrz.
+
+(* ==================== FONCTIONS CRYPTOGRAPHIQUES ==================== *)
+
+fun enc(bitstring, key): bitstring.
+reduc forall m: bitstring, k: key;
+    dec(enc(m, k), k) = m.
+
+fun encM(mrz, key): mrz.
+reduc forall m: mrz, k: key;
+    decM(encM(m, k), k) = m.
+
+fun mac(bitstring, key): bitstring.
+reduc forall m: bitstring, k: key;
+    verify_mac(m, mac(m, k), k) = true.
+
+fun mrz_to_Kenc(mrz): key.
+fun mrz_to_Kmac(mrz): key.
+
+fun xor(key, key): key.
+fun derive_enc(key): key.
+fun derive_mac(key): key.
+
+(* ==================== CONSTANTES ET DONNEES ==================== *)
+
+free donnees_basiques: bitstring [private].
+free get_challenge:    bitstring.
+
+(* ==================== EVENEMENTS ==================== *)
+
+(* Terminal *)
+event Terminal_send_challenge.
+event Terminal_recv_rnd_ic(nonce).
+event Terminal_send_auth(nonce, nonce).
+event Terminal_verif_mac.
+event Terminal_verif_rnd_ifd(nonce, nonce).
+event Terminal_verif_rnd_ic(nonce, nonce).
+event Terminal_auth_Passeport(nonce, nonce).
+event Terminal_session_ok(key, key).
+
+(* Passeport *)
+event Passeport_recv_challenge.
+event Passeport_send_rnd_ic(nonce).
+event Passeport_verif_mac.
+event Passeport_verif_rnd_ic(nonce, nonce).
+event Passeport_auth_Terminal(nonce, nonce).
+event Passeport_session_ok(key, key).
+event Passeport_send_data.
+
+(* ==================== REQUETES DE SECURITE ==================== *)
+
+(* --- Confidentialite --- *)
+
+query secret MRZ.
+query attacker(donnees_basiques).
+
+(* --- Authentification mutuelle --- *)
+
+(* Le terminal ne complete son auth que si le passeport a bien repondu *)
+query n1: nonce, n2: nonce;
+    event(Terminal_auth_Passeport(n1, n2)) ==>
+    event(Passeport_auth_Terminal(n1, n2)).
+
+(* Version injective : pas de rejeu possible *)
+query n1: nonce, n2: nonce;
+    inj-event(Terminal_auth_Passeport(n1, n2)) ==>
+    inj-event(Passeport_auth_Terminal(n1, n2)).
+
+(* Le passeport ne s'authentifie que si le terminal a initie *)
+query n1: nonce, n2: nonce;
+    event(Passeport_auth_Terminal(n1, n2)) ==>
+    event(Terminal_send_auth(n1, n2)).
+
+(* Version injective *)
+query n1: nonce, n2: nonce;
+    inj-event(Passeport_auth_Terminal(n1, n2)) ==>
+    inj-event(Terminal_send_auth(n1, n2)).
+
+(* --- Integrite du protocole --- *)
+
+(* Le terminal verifie bien que le passeport a retourne le bon RND.IFD *)
+query n1: nonce, n2: nonce;
+    event(Terminal_verif_rnd_ifd(n1, n2)) ==>
+    event(Terminal_send_auth(n1, n2)).
+
+(* Le passeport verifie bien que le terminal a retourne le bon RND.IC *)
+query n1: nonce, n2: nonce;
+    event(Passeport_auth_Terminal(n1, n2)) ==>
+    event(Passeport_verif_rnd_ic(n1, n2)).
+
+(* --- Etablissement de session --- *)
+
+(* Le terminal etablit une session seulement apres auth complete *)
+query ks1: key, ks2: key, n1: nonce, n2: nonce;
+    event(Terminal_session_ok(ks1, ks2)) ==>
+    event(Terminal_auth_Passeport(n1, n2)).
+
+(* Le passeport etablit une session seulement apres auth complete *)
+query ks1: key, ks2: key, n1: nonce, n2: nonce;
+    event(Passeport_session_ok(ks1, ks2)) ==>
+    event(Passeport_auth_Terminal(n1, n2)).
+
+(* Le passeport n'envoie des donnees qu'apres auth complete *)
+query n1: nonce, n2: nonce;
+    event(Passeport_send_data) ==>
+    event(Passeport_auth_Terminal(n1, n2)).
+
+(* ==================== PROCESSUS TERMINAL ==================== *)
+
+let Terminal(Key_mrz: key) =
+
+    (* Lecture de la MRZ chiffree depuis le canal *)
+    in(c, read: mrz);
+    let MRZ_read = decM(read, Key_mrz) in
+
+    let K_enc = mrz_to_Kenc(MRZ_read) in
+    let K_mac = mrz_to_Kmac(MRZ_read) in
+
+    (* Etape 1 : envoi du GET CHALLENGE *)
+    event Terminal_send_challenge;
+    out(c, get_challenge);
+
+    (* Etape 2 : reception de RND.IC *)
+    in(c, rnd_ic: nonce);
+    event Terminal_recv_rnd_ic(rnd_ic);
+
+    (* Etape 3 : generation de RND.IFD et K.IFD *)
+    new rnd_ifd: nonce;
+    new k_ifd:   key;
+
+    (* Construction de S = RND.IFD || RND.IC || K.IFD *)
+    let s     = (rnd_ifd, rnd_ic, k_ifd) in
+
+    (* Chiffrement et MAC *)
+    let e_ifd = enc(s, K_enc) in
+    let m_ifd = mac(e_ifd, K_mac) in
+
+    event Terminal_send_auth(rnd_ifd, rnd_ic);
+
+    (* Envoi de EIFD || MIFD *)
+    out(c, (e_ifd, m_ifd));
+
+    (* Etape 4 : reception de EIC || MIC *)
+    in(c, (e_ic: bitstring, m_ic: bitstring));
+
+    (* Etape 4a : verification du MAC *)
+    if verify_mac(e_ic, m_ic, K_mac) = true then
+        event Terminal_verif_mac;
+
+        (* Etape 4b : dechiffrement de EIC *)
+        let (rnd_ic_r: nonce, rnd_ifd_r: nonce, k_ic: key) = dec(e_ic, K_enc) in
+
+        (* Etape 4c : verification de RND.IFD *)
+        if rnd_ifd_r = rnd_ifd then
+            event Terminal_verif_rnd_ifd(rnd_ifd, rnd_ic);
+
+            (* Etape 4d : verification de RND.IC *)
+            if rnd_ic_r = rnd_ic then
+                event Terminal_verif_rnd_ic(rnd_ifd, rnd_ic);
+                event Terminal_auth_Passeport(rnd_ifd, rnd_ic);
+
+                (* Etape 5 : derivation des cles de session *)
+                let k_seed = xor(k_ic, k_ifd) in
+                let ks_enc = derive_enc(k_seed) in
+                let ks_mac = derive_mac(k_seed) in
+                event Terminal_session_ok(ks_enc, ks_mac).
+
+(* ==================== PROCESSUS PASSEPORT ==================== *)
+
+let Passeport(MRZ: mrz, Key_mrz: key) =
+
+    (* Envoi de la MRZ chiffree au terminal *)
+    out(c, encM(MRZ, Key_mrz));
+
+    let K_enc = mrz_to_Kenc(MRZ) in
+    let K_mac = mrz_to_Kmac(MRZ) in
+
+    (* Etape 1 : reception du GET CHALLENGE *)
+    in(c, =get_challenge);
+    event Passeport_recv_challenge;
+
+    (* Generation et envoi de RND.IC *)
+    new rnd_ic: nonce;
+    event Passeport_send_rnd_ic(rnd_ic);
+    out(c, rnd_ic);
+
+    (* Etape 3 : reception de EIFD || MIFD *)
+    in(c, (e_ifd: bitstring, m_ifd: bitstring));
+
+    (* Etape 3a : verification du MAC *)
+    if verify_mac(e_ifd, m_ifd, K_mac) = true then
+        event Passeport_verif_mac;
+
+        (* Etape 3b : dechiffrement de EIFD *)
+        let (rnd_ifd: nonce, rnd_ic_check: nonce, k_ifd: key) = dec(e_ifd, K_enc) in
+
+        (* Etape 3c : verification de RND.IC *)
+        if rnd_ic_check = rnd_ic then
+            event Passeport_verif_rnd_ic(rnd_ifd, rnd_ic);
+
+            (* Etape 3d : generation de K.IC *)
+            new k_ic: key;
+
+            (* Construction de R = RND.IC || RND.IFD || K.IC *)
+            let r    = (rnd_ic, rnd_ifd, k_ic) in
+
+            (* Chiffrement et MAC *)
+            let e_ic = enc(r, K_enc) in
+            let m_ic = mac(e_ic, K_mac) in
+
+            event Passeport_auth_Terminal(rnd_ifd, rnd_ic);
+
+            (* Envoi de EIC || MIC *)
+            out(c, (e_ic, m_ic));
+
+            (* Etape 5 : derivation des cles de session *)
+            let k_seed = xor(k_ic, k_ifd) in
+            let ks_enc = derive_enc(k_seed) in
+            let ks_mac = derive_mac(k_seed) in
+            event Passeport_session_ok(ks_enc, ks_mac);
+
+            (* Envoi des donnees basiques protegees par la cle de session *)
+            event Passeport_send_data;
+            out(c, enc(donnees_basiques, ks_enc)).
+
+(* ==================== PROCESSUS PRINCIPAL ==================== *)
+
+process
+    new MRZ: mrz;
+    new Key_mrz: key;
+    !Terminal(Key_mrz) |
+    !Passeport(MRZ, Key_mrz)
