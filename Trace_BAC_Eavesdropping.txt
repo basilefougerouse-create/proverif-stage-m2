@@ -1,0 +1,746 @@
+Process 0 (that is, the initial process):
+{1}new MRZ: mrz;
+{2}new Key_mrz: key;
+(
+    {3}!
+    {4}let Key_mrz_1: key = Key_mrz in
+    {5}in(c, read: mrz);
+    {6}let MRZ_read: mrz = decM(read,Key_mrz_1) in
+    {7}let K_enc: key = mrz_to_Kenc(MRZ_read) in
+    {8}let K_mac: key = mrz_to_Kmac(MRZ_read) in
+    {9}out(c, get_challenge);
+    {10}in(c, Np: nonce);
+    {11}new Nt: nonce;
+    {12}new Kt: key;
+    {13}let S: bitstring = (Nt,Np,Kt) in
+    {14}let EncS: bitstring = enc(S,K_enc) in
+    {15}let MacS: bitstring = mac(EncS,K_mac) in
+    {16}out(c, (EncS,MacS));
+    {17}in(c, (EncR: bitstring,MacR: bitstring));
+    {18}if (verify_mac(EncR,MacR,K_mac) = true) then
+    {19}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    {20}if (Nt_r = Nt) then
+    {21}if (Np_r = Np) then
+    {22}let K_session: key = xor(Kp,Kt) in
+    {23}let ks_enc: key = derive_enc(K_session) in
+    {24}let ks_mac: key = derive_mac(K_session) in
+    {25}in(c, (db_enc: bitstring,db_mac: bitstring));
+    {26}if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    {27}let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    {28}!
+    {29}let MRZ_1: mrz = MRZ in
+    {30}let Key_mrz_2: key = Key_mrz in
+    {31}out(c, encM(MRZ_1,Key_mrz_2));
+    {32}let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
+    {33}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
+    {34}in(c, =get_challenge);
+    {35}new Np_1: nonce;
+    {36}out(c, Np_1);
+    {37}in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    {38}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    {39}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    {40}if (Np_check = Np_1) then
+    {41}new Kp_1: key;
+    {42}let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    {43}let EncR_1: bitstring = enc(R,K_enc_1) in
+    {44}let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    {45}out(c, (EncR_1,MacR_1));
+    {46}let K_session_1: key = xor(Kp_1,Kt_1) in
+    {47}let ks_enc_1: key = derive_enc(K_session_1) in
+    {48}let ks_mac_1: key = derive_mac(K_session_1) in
+    {49}new measure_id: id;
+    {50}let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    {51}out(c, t_leak);
+    {52}out(c, measure_id);
+    {53}let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    {54}let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    {55}out(c, (db_enc_1,db_mac_1))
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}new MRZ: mrz;
+{2}new Key_mrz: key;
+(
+    {3}!
+    {5}in(c, read: mrz);
+    {4}let Key_mrz_1: key = Key_mrz in
+    {6}let MRZ_read: mrz = decM(read,Key_mrz_1) in
+    {9}out(c, get_challenge);
+    {10}in(c, Np: nonce);
+    {11}new Nt: nonce;
+    {12}new Kt: key;
+    {13}let S: bitstring = (Nt,Np,Kt) in
+    {7}let K_enc: key = mrz_to_Kenc(MRZ_read) in
+    {14}let EncS: bitstring = enc(S,K_enc) in
+    {8}let K_mac: key = mrz_to_Kmac(MRZ_read) in
+    {15}let MacS: bitstring = mac(EncS,K_mac) in
+    {16}out(c, (EncS,MacS));
+    {17}in(c, (EncR: bitstring,MacR: bitstring));
+    {18}if (verify_mac(EncR,MacR,K_mac) = true) then
+    {19}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    {20}if (Nt_r = Nt) then
+    {21}if (Np_r = Np) then
+    {25}in(c, (db_enc: bitstring,db_mac: bitstring));
+    {22}let K_session: key = xor(Kp,Kt) in
+    {24}let ks_mac: key = derive_mac(K_session) in
+    {26}if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    {23}let ks_enc: key = derive_enc(K_session) in
+    {27}let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    {28}!
+    {30}let Key_mrz_2: key = Key_mrz in
+    {29}let MRZ_1: mrz = MRZ in
+    {31}out(c, encM(MRZ_1,Key_mrz_2));
+    {34}in(c, =get_challenge);
+    {35}new Np_1: nonce;
+    {36}out(c, Np_1);
+    {37}in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    {33}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
+    {38}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    {32}let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
+    {39}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    {40}if (Np_check = Np_1) then
+    {41}new Kp_1: key;
+    {42}let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    {43}let EncR_1: bitstring = enc(R,K_enc_1) in
+    {44}let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    {45}out(c, (EncR_1,MacR_1));
+    {49}new measure_id: id;
+    {46}let K_session_1: key = xor(Kp_1,Kt_1) in
+    {50}let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    {51}out(c, t_leak);
+    {52}out(c, measure_id);
+    {47}let ks_enc_1: key = derive_enc(K_session_1) in
+    {53}let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    {48}let ks_mac_1: key = derive_mac(K_session_1) in
+    {54}let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    {55}out(c, (db_enc_1,db_mac_1))
+)
+
+-- Query not attacker(donnees_basiques[]) in process 1.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query not attacker(donnees_basiques[])                                  
+goal reachable: attacker(donnees_basiques[])                                 
+
+Derivation:
+Abbreviations:
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kt_2 = Kt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kp_2 = Kp_1[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+measure_id_1 = measure_id[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+
+1. The attacker initially knows get_challenge[].
+attacker(get_challenge[]).
+
+2. The message encM(MRZ[],Key_mrz[]) may be sent to the attacker at output {31}.
+attacker(encM(MRZ[],Key_mrz[])).
+
+3. The message get_challenge[] that the attacker may have by 1 may be received at input {34}.
+So the message Np_2 may be sent to the attacker at output {36}.
+attacker(Np_2).
+
+4. The message encM(MRZ[],Key_mrz[]) that the attacker may have by 2 may be received at input {5}.
+The message Np_2 that the attacker may have by 3 may be received at input {10}.
+So the message (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) may be sent to the attacker at output {16}.
+attacker((enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])))).
+
+5. By 4, the attacker may know (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+Using the function 2-proj-2-tuple the attacker may obtain mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])).
+attacker(mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+
+6. By 4, the attacker may know (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+Using the function 1-proj-2-tuple the attacker may obtain enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])).
+attacker(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[]))).
+
+7. By 6, the attacker may know enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])).
+By 5, the attacker may know mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])).
+Using the function 2-tuple the attacker may obtain (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+attacker((enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])))).
+
+8. The message get_challenge[] that the attacker may have by 1 may be received at input {34}.
+The message (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) that the attacker may have by 7 may be received at input{37}.
+So the message measure_id_1 may be sent to the attacker at output {52}.
+attacker(measure_id_1).
+
+9. The message get_challenge[] that the attacker may have by 1 may be received at input {34}.
+The message (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) that the attacker may have by 7 may be received at input{37}.
+So the message leak(xor(Kp_2,Kt_2),measure_id_1) may be sent to the attacker at output {51}.
+attacker(leak(xor(Kp_2,Kt_2),measure_id_1)).
+
+10. By 9, the attacker may know leak(xor(Kp_2,Kt_2),measure_id_1).
+By 8, the attacker may know measure_id_1.
+Using the function attaque_sca the attacker may obtain xor(Kp_2,Kt_2).
+attacker(xor(Kp_2,Kt_2)).
+
+11. By 10, the attacker may know xor(Kp_2,Kt_2).
+Using the function derive_enc the attacker may obtain derive_enc(xor(Kp_2,Kt_2)).
+attacker(derive_enc(xor(Kp_2,Kt_2))).
+
+12. The message get_challenge[] that the attacker may have by 1 may be received at input {34}.
+The message (enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) that the attacker may have by 7 may be received at input{37}.
+So the message (enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))),mac(enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))),derive_mac(xor(Kp_2,Kt_2)))) may be sent to the attacker at output {55}.
+attacker((enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))),mac(enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))),derive_mac(xor(Kp_2,Kt_2))))).
+
+13. By 12, the attacker may know (enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))),mac(enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))),derive_mac(xor(Kp_2,Kt_2)))).
+Using the function 1-proj-2-tuple the attacker may obtain enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))).
+attacker(enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2)))).
+
+14. By 13, the attacker may know enc(donnees_basiques[],derive_enc(xor(Kp_2,Kt_2))).
+By 11, the attacker may know derive_enc(xor(Kp_2,Kt_2)).
+Using the function dec the attacker may obtain donnees_basiques[].
+attacker(donnees_basiques[]).
+
+15. By 14, attacker(donnees_basiques[]).
+The goal is reached, represented in the following fact:
+attacker(donnees_basiques[]).
+
+
+Initial state
+
+Additional knowledge of the attacker:
+c
+get_challenge
+--------------------------------------------------------------
+New processes:
+    new MRZ: mrz;
+    new Key_mrz: key;
+    (
+        !
+        in(c, read: mrz);
+        let Key_mrz_1: key = Key_mrz in
+        let MRZ_read: mrz = decM(read,Key_mrz_1) in
+        out(c, get_challenge);
+        in(c, Np: nonce);
+        new Nt: nonce;
+        new Kt: key;
+        let S: bitstring = (Nt,Np,Kt) in
+        let K_enc: key = mrz_to_Kenc(MRZ_read) in
+        let EncS: bitstring = enc(S,K_enc) in
+        let K_mac: key = mrz_to_Kmac(MRZ_read) in
+        let MacS: bitstring = mac(EncS,K_mac) in
+        out(c, (EncS,MacS));
+        in(c, (EncR: bitstring,MacR: bitstring));
+        if (verify_mac(EncR,MacR,K_mac) = true) then
+        let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+        if (Nt_r = Nt) then
+        if (Np_r = Np) then
+        in(c, (db_enc: bitstring,db_mac: bitstring));
+        let K_session: key = xor(Kp,Kt) in
+        let ks_mac: key = derive_mac(K_session) in
+        if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+        let ks_enc: key = derive_enc(K_session) in
+        let data: bitstring = dec(db_enc,ks_enc) in
+        0
+    ) | (
+        !
+        let Key_mrz_2: key = Key_mrz in
+        let MRZ_1: mrz = MRZ in
+        out(c, encM(MRZ_1,Key_mrz_2));
+        in(c, =get_challenge);
+        new Np_1: nonce;
+        out(c, Np_1);
+        in(c, (EncS_1: bitstring,MacS_1: bitstring));
+        let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
+        if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+        let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
+        let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+        if (Np_check = Np_1) then
+        new Kp_1: key;
+        let R: bitstring = (Np_1,Nt_1,Kp_1) in
+        let EncR_1: bitstring = enc(R,K_enc_1) in
+        let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+        out(c, (EncR_1,MacR_1));
+        new measure_id: id;
+        let K_session_1: key = xor(Kp_1,Kt_1) in
+        let t_leak: power_consumption = leak(K_session_1,measure_id) in
+        out(c, t_leak);
+        out(c, measure_id);
+        let ks_enc_1: key = derive_enc(K_session_1) in
+        let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+        let ks_mac_1: key = derive_mac(K_session_1) in
+        let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+        out(c, (db_enc_1,db_mac_1))
+    )
+
+--------------------------------------------------------------
+1st process: new MRZ: mrz creating MRZ_2
+
+1st process: new Key_mrz: key creating Key_mrz_3
+
+1st process: Reduction |
+
+2nd process: Reduction ! 2 copy(ies)
+
+3rd process: Beginning of process Passeport
+
+3rd process: let Key_mrz_2: key = Key_mrz_3 succeeds
+
+3rd process: let MRZ_1: mrz = MRZ_2 succeeds
+
+3rd process: out(c, ~M) with ~M = encM(MRZ_2,Key_mrz_3) done
+
+Additional knowledge of the attacker:
+~M = encM(MRZ_2,Key_mrz_3)
+--------------------------------------------------------------
+2nd process: Beginning of process Passeport
+
+2nd process: let Key_mrz_2: key = Key_mrz_3 succeeds
+
+2nd process: let MRZ_1: mrz = MRZ_2 succeeds
+
+2nd process: out(c, ~M_1) with ~M_1 = encM(MRZ_2,Key_mrz_3) done
+
+1st process: Reduction ! 1 copy(ies)
+
+1st process: Beginning of process Terminal
+
+New processes:
+(
+    in(c, read: mrz);
+    let Key_mrz_1: key = Key_mrz_3 in
+    let MRZ_read: mrz = decM(read,Key_mrz_1) in
+    out(c, get_challenge);
+    in(c, Np: nonce);
+    new Nt: nonce;
+    new Kt: key;
+    let S: bitstring = (Nt,Np,Kt) in
+    let K_enc: key = mrz_to_Kenc(MRZ_read) in
+    let EncS: bitstring = enc(S,K_enc) in
+    let K_mac: key = mrz_to_Kmac(MRZ_read) in
+    let MacS: bitstring = mac(EncS,K_mac) in
+    out(c, (EncS,MacS));
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,K_mac) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    if (Nt_r = Nt) then
+    if (Np_r = Np) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+1st process: in(c, read: mrz) done with message ~M = encM(MRZ_2,Key_mrz_3)
+
+1st process: let Key_mrz_1: key = Key_mrz_3 succeeds
+
+1st process: let MRZ_read: mrz = MRZ_2 succeeds
+
+1st process: out(c, ~M_2) with ~M_2 = get_challenge done
+
+New processes:
+(
+    in(c, Np: nonce);
+    new Nt: nonce;
+    new Kt: key;
+    let S: bitstring = (Nt,Np,Kt) in
+    let K_enc: key = mrz_to_Kenc(MRZ_2) in
+    let EncS: bitstring = enc(S,K_enc) in
+    let K_mac: key = mrz_to_Kmac(MRZ_2) in
+    let MacS: bitstring = mac(EncS,K_mac) in
+    out(c, (EncS,MacS));
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,K_mac) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    if (Nt_r = Nt) then
+    if (Np_r = Np) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+3rd process: in(c, =get_challenge) done with message get_challenge
+
+3rd process: new Np_1: nonce creating Np_3
+
+3rd process: out(c, ~M_3) with ~M_3 = Np_3 done
+
+Additional knowledge of the attacker:
+~M_3 = Np_3
+--------------------------------------------------------------
+New processes:
+(
+    in(c, Np: nonce);
+    new Nt: nonce;
+    new Kt: key;
+    let S: bitstring = (Nt,Np,Kt) in
+    let K_enc: key = mrz_to_Kenc(MRZ_2) in
+    let EncS: bitstring = enc(S,K_enc) in
+    let K_mac: key = mrz_to_Kmac(MRZ_2) in
+    let MacS: bitstring = mac(EncS,K_mac) in
+    out(c, (EncS,MacS));
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,K_mac) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    if (Nt_r = Nt) then
+    if (Np_r = Np) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_3) then
+    new Kp_1: key;
+    let R: bitstring = (Np_3,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+1st process: in(c, Np: nonce) done with message ~M_3 = Np_3
+
+1st process: new Nt: nonce creating Nt_3
+
+1st process: new Kt: key creating Kt_3
+
+1st process: let S: bitstring = (Nt_3,Np_3,Kt_3) succeeds
+
+1st process: let K_enc: key = mrz_to_Kenc(MRZ_2) succeeds
+
+1st process: let EncS: bitstring = enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)) succeeds
+
+1st process: let K_mac: key = mrz_to_Kmac(MRZ_2) succeeds
+
+1st process: let MacS: bitstring = mac(enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) succeeds
+
+1st process: out(c, (~M_4,~M_5)) with ~M_4 = enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)), ~M_5 = mac(enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) done
+
+Additional knowledge of the attacker:
+~M_5 = mac(enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))
+~M_4 = enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2))
+--------------------------------------------------------------
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = Np_3) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_3) then
+    new Kp_1: key;
+    let R: bitstring = (Np_3,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+3rd process: in(c, (EncS_1: bitstring,MacS_1: bitstring)) done with message (~M_4,~M_5) = (enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)))
+
+3rd process: let K_mac_1: key = mrz_to_Kmac(MRZ_2) succeeds
+
+3rd process: if (verify_mac(enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,Np_3,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)),mrz_to_Kmac(MRZ_2)) = true) succeeds
+
+3rd process: let K_enc_1: key = mrz_to_Kenc(MRZ_2) succeeds
+
+3rd process: let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = (Nt_3,Np_3,Kt_3) succeeds
+
+3rd process: if (Np_3 = Np_3) succeeds
+
+3rd process: new Kp_1: key creating Kp_3
+
+3rd process: let R: bitstring = (Np_3,Nt_3,Kp_3) succeeds
+
+3rd process: let EncR_1: bitstring = enc((Np_3,Nt_3,Kp_3),mrz_to_Kenc(MRZ_2)) succeeds
+
+3rd process: let MacR_1: bitstring = mac(enc((Np_3,Nt_3,Kp_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) succeeds
+
+3rd process: out(c, (~M_6,~M_7)) with ~M_6 = enc((Np_3,Nt_3,Kp_3),mrz_to_Kenc(MRZ_2)), ~M_7 = mac(enc((Np_3,Nt_3,Kp_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) done
+
+Additional knowledge of the attacker:
+~M_7 = mac(enc((Np_3,Nt_3,Kp_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))
+~M_6 = enc((Np_3,Nt_3,Kp_3),mrz_to_Kenc(MRZ_2))
+--------------------------------------------------------------
+3rd process: new measure_id: id creating measure_id_2
+
+3rd process: let K_session_1: key = xor(Kp_3,Kt_3) succeeds
+
+3rd process: let t_leak: power_consumption = leak(xor(Kp_3,Kt_3),measure_id_2) succeeds
+
+3rd process: out(c, ~M_8) with ~M_8 = leak(xor(Kp_3,Kt_3),measure_id_2) done
+
+Additional knowledge of the attacker:
+~M_8 = leak(xor(Kp_3,Kt_3),measure_id_2)
+--------------------------------------------------------------
+3rd process: out(c, ~M_9) with ~M_9 = measure_id_2 done
+
+Additional knowledge of the attacker:
+derive_enc(attaque_sca(~M_8,~M_9)) = derive_enc(xor(Kp_3,Kt_3))
+attaque_sca(~M_8,~M_9) = xor(Kp_3,Kt_3)
+~M_9 = measure_id_2
+--------------------------------------------------------------
+3rd process: let ks_enc_1: key = derive_enc(xor(Kp_3,Kt_3)) succeeds
+
+3rd process: let db_enc_1: bitstring = enc(donnees_basiques,derive_enc(xor(Kp_3,Kt_3))) succeeds
+
+3rd process: let ks_mac_1: key = derive_mac(xor(Kp_3,Kt_3)) succeeds
+
+3rd process: let db_mac_1: bitstring = mac(enc(donnees_basiques,derive_enc(xor(Kp_3,Kt_3))),derive_mac(xor(Kp_3,Kt_3))) succeeds
+
+3rd process: out(c, (~M_10,~M_11)) with ~M_10 = enc(donnees_basiques,derive_enc(xor(Kp_3,Kt_3))), ~M_11 = mac(enc(donnees_basiques,derive_enc(xor(Kp_3,Kt_3))),derive_mac(xor(Kp_3,Kt_3))) done
+
+Additional knowledge of the attacker:
+~M_11 = mac(enc(donnees_basiques,derive_enc(xor(Kp_3,Kt_3))),derive_mac(xor(Kp_3,Kt_3)))
+dec(~M_10,derive_enc(attaque_sca(~M_8,~M_9))) = donnees_basiques
+~M_10 = enc(donnees_basiques,derive_enc(xor(Kp_3,Kt_3)))
+--------------------------------------------------------------
+3rd process: Reduction 0
+
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = Np_3) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    out(c, Np_1);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_1) then
+    new Kp_1: key;
+    let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    new measure_id: id;
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let t_leak: power_consumption = leak(K_session_1,measure_id) in
+    out(c, t_leak);
+    out(c, measure_id);
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+The attacker has the message dec(~M_10,derive_enc(attaque_sca(~M_8,~M_9))) = donnees_basiques.
+A trace has been found.
+RESULT not attacker(donnees_basiques[]) is false.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query not attacker(donnees_basiques[]) is false.
+
+--------------------------------------------------------------

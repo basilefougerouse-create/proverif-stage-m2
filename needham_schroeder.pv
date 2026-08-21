@@ -25,11 +25,6 @@ event B_end(pkey, bitstring).
 (*   Queries                                             *)
 (* ===================================================== *)
 
-query secret Na.
-
-query secret Nb.
-
-
 query na : bitstring; 
     event(B_end(pk(skA), na))  ==> event(A_start(pk(skB), na)).
 

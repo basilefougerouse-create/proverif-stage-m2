@@ -1,0 +1,344 @@
+Process 0 (that is, the initial process):
+{1}out(c, pk(skA));
+{2}out(c, pk(skB));
+(
+    {3}!
+    {4}let skA_1: skey = skA in
+    {5}in(c, pkX: pkey);
+    {6}if (pkX ≠ pk(skA_1)) then
+    {7}new Na: bitstring;
+    {8}event A_start(pkX,Na);
+    {9}out(c, aenc((Na,pk(skA_1)),pkX));
+    {10}in(c, msg2: bitstring);
+    {11}let (=Na,Nb: bitstring) = adec(msg2,skA_1) in
+    {12}event A_end(pkX,Na,Nb);
+    {13}out(c, aenc(Nb,pkX))
+) | (
+    {14}!
+    {15}let skB_1: skey = skB in
+    {16}in(c, msg1: bitstring);
+    {17}let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+    {18}if (pkX_1 ≠ pk(skB_1)) then
+    {19}new Nb_1: bitstring;
+    {20}event B_start(pkX_1,Na_1,Nb_1);
+    {21}out(c, aenc((Na_1,Nb_1),pkX_1));
+    {22}in(c, msg3: bitstring);
+    {23}let =Nb_1 = adec(msg3,skB_1) in
+    {24}event B_end(pkX_1,Na_1)
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}out(c, pk(skA));
+{2}out(c, pk(skB));
+(
+    {3}!
+    {5}in(c, pkX: pkey);
+    {4}let skA_1: skey = skA in
+    {6}if (pkX ≠ pk(skA_1)) then
+    {7}new Na: bitstring;
+    {8}event A_start(pkX,Na);
+    {9}out(c, aenc((Na,pk(skA_1)),pkX));
+    {10}in(c, msg2: bitstring);
+    {11}let (=Na,Nb: bitstring) = adec(msg2,skA_1) in
+    {12}event A_end(pkX,Na,Nb);
+    {13}out(c, aenc(Nb,pkX))
+) | (
+    {14}!
+    {16}in(c, msg1: bitstring);
+    {15}let skB_1: skey = skB in
+    {17}let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+    {18}if (pkX_1 ≠ pk(skB_1)) then
+    {19}new Nb_1: bitstring;
+    {20}event B_start(pkX_1,Na_1,Nb_1);
+    {21}out(c, aenc((Na_1,Nb_1),pkX_1));
+    {22}in(c, msg3: bitstring);
+    {23}let =Nb_1 = adec(msg3,skB_1) in
+    {24}event B_end(pkX_1,Na_1)
+)
+
+-- Query event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na)) in process 1.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na))      
+goal reachable: sk ≠ skA[] && b-event(A_start(pk(sk),Na_2)) && attacker(sk) -> event(B_end(pk(skA[]),Na_2))
+Abbreviations:
+Na_2 = Na[pkX = pk(sk),!1 = @sid]
+
+Derivation:
+Abbreviations:
+Na_2 = Na[pkX = pk(sk),!1 = @sid]
+Nb_2 = Nb_1[msg1 = aenc((Na_2,pk(skA[])),pk(skB[])),!1 = @sid_1]
+
+1. The message pk(skB[]) may be sent to the attacker at output {2}.
+attacker(pk(skB[])).
+
+2. The message pk(skA[]) may be sent to the attacker at output {1}.
+attacker(pk(skA[])).
+
+3. We assume as hypothesis that
+attacker(sk).
+
+4. By 3, the attacker may know sk.
+Using the function pk the attacker may obtain pk(sk).
+attacker(pk(sk)).
+
+5. The message pk(sk) that the attacker may have by 4 may be received at input {5}.
+The event A_start(pk(sk),Na_2) may be executed at {8}.
+We have pk(sk) ≠ pk(skA[]).
+So the message aenc((Na_2,pk(skA[])),pk(sk)) may be sent to the attacker at output {9}.
+attacker(aenc((Na_2,pk(skA[])),pk(sk))).
+
+6. By 5, the attacker may know aenc((Na_2,pk(skA[])),pk(sk)).
+By 3, the attacker may know sk.
+Using the function adec the attacker may obtain (Na_2,pk(skA[])).
+attacker((Na_2,pk(skA[]))).
+
+7. By 6, the attacker may know (Na_2,pk(skA[])).
+Using the function 1-proj-2-tuple the attacker may obtain Na_2.
+attacker(Na_2).
+
+8. By 7, the attacker may know Na_2.
+By 2, the attacker may know pk(skA[]).
+Using the function 2-tuple the attacker may obtain (Na_2,pk(skA[])).
+attacker((Na_2,pk(skA[]))).
+
+9. By 8, the attacker may know (Na_2,pk(skA[])).
+By 1, the attacker may know pk(skB[]).
+Using the function aenc the attacker may obtain aenc((Na_2,pk(skA[])),pk(skB[])).
+attacker(aenc((Na_2,pk(skA[])),pk(skB[]))).
+
+10. The message aenc((Na_2,pk(skA[])),pk(skB[])) that the attacker may have by 9 may be received at input {16}.
+We have pk(skA[]) ≠ pk(skB[]).
+So the message aenc((Na_2,Nb_2),pk(skA[])) may be sent to the attacker at output {21}.
+attacker(aenc((Na_2,Nb_2),pk(skA[]))).
+
+11. The message pk(sk) that the attacker may have by 4 may be received at input {5}.
+The event A_start(pk(sk),Na_2) may be executed at {8}.
+The message aenc((Na_2,Nb_2),pk(skA[])) that the attacker may have by 10 may be received at input {10}.
+We have pk(sk) ≠ pk(skA[]).
+So the message aenc(Nb_2,pk(sk)) may be sent to the attacker at output {13}.
+attacker(aenc(Nb_2,pk(sk))).
+
+12. By 11, the attacker may know aenc(Nb_2,pk(sk)).
+By 3, the attacker may know sk.
+Using the function adec the attacker may obtain Nb_2.
+attacker(Nb_2).
+
+13. By 12, the attacker may know Nb_2.
+By 1, the attacker may know pk(skB[]).
+Using the function aenc the attacker may obtain aenc(Nb_2,pk(skB[])).
+attacker(aenc(Nb_2,pk(skB[]))).
+
+14. The message aenc((Na_2,pk(skA[])),pk(skB[])) that the attacker may have by 9 may be received at input {16}.
+The message aenc(Nb_2,pk(skB[])) that the attacker may have by 13 may be received at input {22}.
+We have pk(skA[]) ≠ pk(skB[]).
+So event B_end(pk(skA[]),Na_2) may be executed at {24}.
+event(B_end(pk(skA[]),Na_2)).
+
+15. By 14, event(B_end(pk(skA[]),Na_2)).
+The goal is reached, represented in the following fact:
+event(B_end(pk(skA[]),Na_2)).
+
+
+Initial state
+
+Additional knowledge of the attacker:
+c
+pk(a)
+a
+--------------------------------------------------------------
+New processes:
+    out(c, pk(skA));
+    out(c, pk(skB));
+    (
+        !
+        in(c, pkX: pkey);
+        let skA_1: skey = skA in
+        if (pkX ≠ pk(skA_1)) then
+        new Na: bitstring;
+        event A_start(pkX,Na);
+        out(c, aenc((Na,pk(skA_1)),pkX));
+        in(c, msg2: bitstring);
+        let (=Na,Nb: bitstring) = adec(msg2,skA_1) in
+        event A_end(pkX,Na,Nb);
+        out(c, aenc(Nb,pkX))
+    ) | (
+        !
+        in(c, msg1: bitstring);
+        let skB_1: skey = skB in
+        let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+        if (pkX_1 ≠ pk(skB_1)) then
+        new Nb_1: bitstring;
+        event B_start(pkX_1,Na_1,Nb_1);
+        out(c, aenc((Na_1,Nb_1),pkX_1));
+        in(c, msg3: bitstring);
+        let =Nb_1 = adec(msg3,skB_1) in
+        event B_end(pkX_1,Na_1)
+    )
+
+--------------------------------------------------------------
+1st process: out(c, ~M) with ~M = pk(skA) done
+
+Additional knowledge of the attacker:
+~M = pk(skA)
+--------------------------------------------------------------
+1st process: out(c, ~M_1) with ~M_1 = pk(skB) done
+
+Additional knowledge of the attacker:
+~M_1 = pk(skB)
+--------------------------------------------------------------
+1st process: Reduction |
+
+2nd process: Reduction ! 1 copy(ies)
+
+2nd process: Beginning of process processB
+
+1st process: Reduction ! 1 copy(ies)
+
+1st process: Beginning of process processA
+
+New processes:
+(
+    in(c, pkX: pkey);
+    let skA_1: skey = skA in
+    if (pkX ≠ pk(skA_1)) then
+    new Na: bitstring;
+    event A_start(pkX,Na);
+    out(c, aenc((Na,pk(skA_1)),pkX));
+    in(c, msg2: bitstring);
+    let (=Na,Nb: bitstring) = adec(msg2,skA_1) in
+    event A_end(pkX,Na,Nb);
+    out(c, aenc(Nb,pkX))
+) | (
+    in(c, msg1: bitstring);
+    let skB_1: skey = skB in
+    let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+    if (pkX_1 ≠ pk(skB_1)) then
+    new Nb_1: bitstring;
+    event B_start(pkX_1,Na_1,Nb_1);
+    out(c, aenc((Na_1,Nb_1),pkX_1));
+    in(c, msg3: bitstring);
+    let =Nb_1 = adec(msg3,skB_1) in
+    event B_end(pkX_1,Na_1)
+)
+
+--------------------------------------------------------------
+1st process: in(c, pkX: pkey) done with message pk(a)
+
+1st process: let skA_1: skey = skA succeeds
+
+1st process: if (pk(a) ≠ pk(skA)) succeeds
+
+1st process: new Na: bitstring creating Na_3
+
+1st process: event A_start(pk(a),Na_3) executed
+
+1st process: out(c, ~M_2) with ~M_2 = aenc((Na_3,pk(skA)),pk(a)) done
+
+Additional knowledge of the attacker:
+aenc((1-proj-2-tuple(adec(~M_2,a)),~M),~M_1) = aenc((Na_3,pk(skA)),pk(skB))
+1-proj-2-tuple(adec(~M_2,a)) = Na_3
+~M_2 = aenc((Na_3,pk(skA)),pk(a))
+--------------------------------------------------------------
+New processes:
+(
+    in(c, msg2: bitstring);
+    let (=Na_3,Nb: bitstring) = adec(msg2,skA) in
+    event A_end(pk(a),Na_3,Nb);
+    out(c, aenc(Nb,pk(a)))
+) | (
+    in(c, msg1: bitstring);
+    let skB_1: skey = skB in
+    let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+    if (pkX_1 ≠ pk(skB_1)) then
+    new Nb_1: bitstring;
+    event B_start(pkX_1,Na_1,Nb_1);
+    out(c, aenc((Na_1,Nb_1),pkX_1));
+    in(c, msg3: bitstring);
+    let =Nb_1 = adec(msg3,skB_1) in
+    event B_end(pkX_1,Na_1)
+)
+
+--------------------------------------------------------------
+2nd process: in(c, msg1: bitstring) done with message aenc((1-proj-2-tuple(adec(~M_2,a)),~M),~M_1) = aenc((Na_3,pk(skA)),pk(skB))
+
+2nd process: let skB_1: skey = skB succeeds
+
+2nd process: let (Na_1: bitstring,pkX_1: pkey) = (Na_3,pk(skA)) succeeds
+
+2nd process: if (pk(skA) ≠ pk(skB)) succeeds
+
+2nd process: new Nb_1: bitstring creating Nb_3
+
+2nd process: event B_start(pk(skA),Na_3,Nb_3) executed
+
+2nd process: out(c, ~M_3) with ~M_3 = aenc((Na_3,Nb_3),pk(skA)) done
+
+Additional knowledge of the attacker:
+~M_3 = aenc((Na_3,Nb_3),pk(skA))
+--------------------------------------------------------------
+New processes:
+(
+    in(c, msg2: bitstring);
+    let (=Na_3,Nb: bitstring) = adec(msg2,skA) in
+    event A_end(pk(a),Na_3,Nb);
+    out(c, aenc(Nb,pk(a)))
+) | (
+    in(c, msg3: bitstring);
+    let =Nb_3 = adec(msg3,skB) in
+    event B_end(pk(skA),Na_3)
+)
+
+--------------------------------------------------------------
+1st process: in(c, msg2: bitstring) done with message ~M_3 = aenc((Na_3,Nb_3),pk(skA))
+
+1st process: let (=Na_3,Nb: bitstring) = (Na_3,Nb_3) succeeds
+
+1st process: event A_end(pk(a),Na_3,Nb_3) executed
+
+1st process: out(c, ~M_4) with ~M_4 = aenc(Nb_3,pk(a)) done
+
+Additional knowledge of the attacker:
+aenc(adec(~M_4,a),~M_1) = aenc(Nb_3,pk(skB))
+adec(~M_4,a) = Nb_3
+~M_4 = aenc(Nb_3,pk(a))
+--------------------------------------------------------------
+1st process: Reduction 0
+
+New processes:
+    in(c, msg3: bitstring);
+    let =Nb_3 = adec(msg3,skB) in
+    event B_end(pk(skA),Na_3)
+
+--------------------------------------------------------------
+1st process: in(c, msg3: bitstring) done with message aenc(adec(~M_4,a),~M_1) = aenc(Nb_3,pk(skB))
+
+1st process: let =Nb_3 = Nb_3 succeeds
+
+1st process: event B_end(pk(skA),Na_3) executed; it is a goal
+
+New processes:
+    0
+
+--------------------------------------------------------------
+The event B_end(pk(skA),Na_3) is executed at {24} in copy a_1.
+A trace has been found.
+RESULT event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na)) is false.
+-- Query event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb)) in process 1.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb))
+goal reachable: b-event(B_start(pk(skA[]),Na_2,Nb_2)) -> event(A_end(pk(skB[]),Na_2,Nb_2))
+Abbreviations:
+Na_2 = Na[pkX = pk(skB[]),!1 = @sid]
+Nb_2 = Nb_1[msg1 = aenc((Na_2,pk(skA[])),pk(skB[])),!1 = @sid_1]
+RESULT event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb)) is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na)) is false.
+
+Query event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb)) is true.
+
+--------------------------------------------------------------

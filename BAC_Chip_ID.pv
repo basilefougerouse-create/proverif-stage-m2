@@ -6,8 +6,6 @@ free c: channel.
 type nonce.
 type key.
 type mrz.
-type power_consumption.
-type id.
 
 (* ==================== FONCTIONS CRYPTOGRAPHIQUES ==================== *)
 
@@ -30,28 +28,29 @@ fun xor(key, key): key.
 fun derive_enc(key): key.
 fun derive_mac(key): key.
 
-(* ==================== SIDE-CHANNEL ==================== *)
-
-fun leak(key, id): power_consumption.
-
-reduc forall k: key, i: id;
-    recherche_ex(leak(k, i), i) = k.
-
 (* ==================== CONSTANTES ET DONNEES ==================== *)
 
 free donnees_basiques: bitstring [private].
 free get_challenge:    bitstring.
 
-(* ==================== REQUETES ==================== *)
+const n0 : nonce.
 
-query attacker(donnees_basiques).
+(* ==================== EVENEMENTS ==================== *)
+
+(* Integrite *)
+event Terminal_send_auth(bitstring, bitstring).
+event Passeport_verif_Np(bitstring, bitstring).
+
+query e:bitstring, m:bitstring;
+    inj-event(Passeport_verif_Np(e,m)) ==> inj-event(Terminal_send_auth(e,m)).
 
 (* ==================== PROCESSUS TERMINAL ==================== *)
 
-let Terminal(Key_mrz: key) =
+let Terminal(Key_mrz:key) =
 
     in(c, read: mrz);
-    let MRZ_read = decM(read, Key_mrz) in
+
+    let (MRZ_read:mrz) = decM(read,Key_mrz) in
 
     let K_enc = mrz_to_Kenc(MRZ_read) in
     let K_mac = mrz_to_Kmac(MRZ_read) in
@@ -66,6 +65,7 @@ let Terminal(Key_mrz: key) =
     let EncS = enc(S, K_enc) in
     let MacS = mac(EncS, K_mac) in
 
+    event Terminal_send_auth(EncS, MacS);
     out(c, (EncS, MacS));
 
     in(c, (EncR: bitstring, MacR: bitstring));
@@ -75,19 +75,20 @@ let Terminal(Key_mrz: key) =
 
         if Nt_r = Nt then
             if Np_r = Np then
-
                 let K_session = xor(Kp, Kt) in
                 let ks_enc    = derive_enc(K_session) in
+                let ks_mac    = derive_mac(K_session) in
 
-                in(c, data_enc: bitstring);
-                let data = dec(data_enc, ks_enc) in
-                0.
+                in(c, (db_enc: bitstring, db_mac: bitstring));
+                if verify_mac(db_enc, db_mac, ks_mac) = true then
+                    let data = dec(db_enc, ks_enc) in
+                    0.
 
 (* ==================== PROCESSUS PASSEPORT ==================== *)
 
-let Passeport(MRZ: mrz, Key_mrz: key) =
+let Passeport(MRZ:mrz , Key_mrz:key) =
 
-    out(c, encM(MRZ, Key_mrz));
+    out(c, encM(MRZ,Key_mrz));
 
     let K_enc = mrz_to_Kenc(MRZ) in
     let K_mac = mrz_to_Kmac(MRZ) in
@@ -95,6 +96,7 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
     in(c, =get_challenge);
 
     new Np: nonce;
+    let Np= n0 in
     out(c, Np);
 
     in(c, (EncS: bitstring, MacS: bitstring));
@@ -104,7 +106,10 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
 
         if Np_check = Np then
 
+            event Passeport_verif_Np(EncS, MacS);
+
             new Kp: key;
+
             let R    = (Np, Nt, Kp) in
             let EncR = enc(R, K_enc) in
             let MacR = mac(EncR, K_mac) in
@@ -113,18 +118,16 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
 
             let K_session = xor(Kp, Kt) in
             let ks_enc    = derive_enc(K_session) in
+            let ks_mac    = derive_mac(K_session) in
 
-            new measure_id: id;
-            let t_leak = leak(K_session, measure_id) in
-            out(c, t_leak);
-            out(c, measure_id);
-
-            out(c, enc(donnees_basiques, ks_enc)).
+            let db_enc = enc(donnees_basiques, ks_enc) in
+            let db_mac = mac(db_enc, ks_mac) in
+            out(c, (db_enc, db_mac)).
 
 (* ==================== PROCESSUS PRINCIPAL ==================== *)
 
 process
-    new MRZ: mrz;
-    new Key_mrz: key;
-    !Terminal(Key_mrz) |
-    !Passeport(MRZ, Key_mrz)
+    new MRZ:mrz;
+    new Key_mrz : key;
+    ! Terminal(Key_mrz) |
+    ! Passeport(MRZ,Key_mrz)

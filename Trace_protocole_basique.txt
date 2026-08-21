@@ -1,0 +1,38 @@
+Process 0 (that is, the initial process):
+(
+    {1}out(c, m)
+) | (
+    {2}in(c, x: bitstring)
+)
+
+-- Query not attacker(m[]) in process 0.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query not attacker(m[])                                                
+goal reachable: attacker(m[])                                                
+
+Derivation:
+
+1. The message m[] may be sent to the attacker at output {1}.
+attacker(m[]).
+
+2. By 1, attacker(m[]).
+The goal is reached, represented in the following fact:
+attacker(m[]).
+
+
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+out(c, ~M) with ~M = m at {1}
+
+The attacker has the message ~M = m.
+A trace has been found.
+RESULT not attacker(m[]) is false.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query not attacker(m[]) is false.
+
+--------------------------------------------------------------

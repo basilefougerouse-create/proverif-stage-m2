@@ -1,0 +1,960 @@
+File "BAC_Chip_ID.pv", line 99, characters 9-10:
+Warning: identifier Np rebound.
+Process 0 (that is, the initial process):
+{1}new MRZ: mrz;
+{2}new Key_mrz: key;
+(
+    {3}!
+    {4}let Key_mrz_1: key = Key_mrz in
+    {5}in(c, read: mrz);
+    {6}let MRZ_read: mrz = decM(read,Key_mrz_1) in
+    {7}let K_enc: key = mrz_to_Kenc(MRZ_read) in
+    {8}let K_mac: key = mrz_to_Kmac(MRZ_read) in
+    {9}out(c, get_challenge);
+    {10}in(c, Np: nonce);
+    {11}new Nt: nonce;
+    {12}new Kt: key;
+    {13}let S: bitstring = (Nt,Np,Kt) in
+    {14}let EncS: bitstring = enc(S,K_enc) in
+    {15}let MacS: bitstring = mac(EncS,K_mac) in
+    {16}event Terminal_send_auth(EncS,MacS);
+    {17}out(c, (EncS,MacS));
+    {18}in(c, (EncR: bitstring,MacR: bitstring));
+    {19}if (verify_mac(EncR,MacR,K_mac) = true) then
+    {20}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    {21}if (Nt_r = Nt) then
+    {22}if (Np_r = Np) then
+    {23}let K_session: key = xor(Kp,Kt) in
+    {24}let ks_enc: key = derive_enc(K_session) in
+    {25}let ks_mac: key = derive_mac(K_session) in
+    {26}in(c, (db_enc: bitstring,db_mac: bitstring));
+    {27}if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    {28}let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    {29}!
+    {30}let MRZ_1: mrz = MRZ in
+    {31}let Key_mrz_2: key = Key_mrz in
+    {32}out(c, encM(MRZ_1,Key_mrz_2));
+    {33}let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
+    {34}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
+    {35}in(c, =get_challenge);
+    {36}new Np_1: nonce;
+    {37}let Np_2: nonce = n0 in
+    {38}out(c, Np_2);
+    {39}in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    {40}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    {41}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    {42}if (Np_check = Np_2) then
+    {43}event Passeport_verif_Np(EncS_1,MacS_1);
+    {44}new Kp_1: key;
+    {45}let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    {46}let EncR_1: bitstring = enc(R,K_enc_1) in
+    {47}let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    {48}out(c, (EncR_1,MacR_1));
+    {49}let K_session_1: key = xor(Kp_1,Kt_1) in
+    {50}let ks_enc_1: key = derive_enc(K_session_1) in
+    {51}let ks_mac_1: key = derive_mac(K_session_1) in
+    {52}let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    {53}let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    {54}out(c, (db_enc_1,db_mac_1))
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}new MRZ: mrz;
+{2}new Key_mrz: key;
+(
+    {3}!
+    {5}in(c, read: mrz);
+    {4}let Key_mrz_1: key = Key_mrz in
+    {6}let MRZ_read: mrz = decM(read,Key_mrz_1) in
+    {9}out(c, get_challenge);
+    {10}in(c, Np: nonce);
+    {11}new Nt: nonce;
+    {12}new Kt: key;
+    {13}let S: bitstring = (Nt,Np,Kt) in
+    {7}let K_enc: key = mrz_to_Kenc(MRZ_read) in
+    {14}let EncS: bitstring = enc(S,K_enc) in
+    {8}let K_mac: key = mrz_to_Kmac(MRZ_read) in
+    {15}let MacS: bitstring = mac(EncS,K_mac) in
+    {16}event Terminal_send_auth(EncS,MacS);
+    {17}out(c, (EncS,MacS));
+    {18}in(c, (EncR: bitstring,MacR: bitstring));
+    {19}if (verify_mac(EncR,MacR,K_mac) = true) then
+    {20}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    {21}if (Nt_r = Nt) then
+    {22}if (Np_r = Np) then
+    {26}in(c, (db_enc: bitstring,db_mac: bitstring));
+    {23}let K_session: key = xor(Kp,Kt) in
+    {25}let ks_mac: key = derive_mac(K_session) in
+    {27}if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    {24}let ks_enc: key = derive_enc(K_session) in
+    {28}let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    {29}!
+    {31}let Key_mrz_2: key = Key_mrz in
+    {30}let MRZ_1: mrz = MRZ in
+    {32}out(c, encM(MRZ_1,Key_mrz_2));
+    {35}in(c, =get_challenge);
+    {36}new Np_1: nonce;
+    {37}let Np_2: nonce = n0 in
+    {38}out(c, Np_2);
+    {39}in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    {34}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
+    {40}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    {33}let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
+    {41}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    {42}if (Np_check = Np_2) then
+    {43}event Passeport_verif_Np(EncS_1,MacS_1);
+    {44}new Kp_1: key;
+    {45}let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    {46}let EncR_1: bitstring = enc(R,K_enc_1) in
+    {47}let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    {48}out(c, (EncR_1,MacR_1));
+    {49}let K_session_1: key = xor(Kp_1,Kt_1) in
+    {50}let ks_enc_1: key = derive_enc(K_session_1) in
+    {52}let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    {51}let ks_mac_1: key = derive_mac(K_session_1) in
+    {53}let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    {54}out(c, (db_enc_1,db_mac_1))
+)
+
+-- Query inj-event(Passeport_verif_Np(e,m)) ==> inj-event(Terminal_send_auth(e,m)) in process 1.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query inj-event(Passeport_verif_Np(e,m)) ==> inj-event(Terminal_send_auth(e,m))
+goal reachable: @sid ≠ @sid_1 && b-inj-event(Terminal_send_auth(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ16_1) -> inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_1) && inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_2)
+Abbreviations:
+Nt_2 = Nt[Np = n0,read = encM(MRZ[],Key_mrz[]),!1 = @sid_2]
+Kt_2 = Kt[Np = n0,read = encM(MRZ[],Key_mrz[]),!1 = @sid_2]
+@occ43_1 = @occ43[MacS_1 = mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+@occ43_2 = @occ43[MacS_1 = mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid_1]
+@occ16_1 = @occ16[Np = n0,read = encM(MRZ[],Key_mrz[]),!1 = @sid_2]
+
+Derivation:
+Abbreviations:
+Nt_2 = Nt[Np = n0,read = encM(MRZ[],Key_mrz[]),!1 = @sid]
+Kt_2 = Kt[Np = n0,read = encM(MRZ[],Key_mrz[]),!1 = @sid]
+@occ43_1 = @occ43[MacS_1 = mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid_1]
+@occ43_2 = @occ43[MacS_1 = mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid_2]
+@occ16_1 = @occ16[Np = n0,read = encM(MRZ[],Key_mrz[]),!1 = @sid]
+
+1. The attacker initially knows get_challenge[].
+attacker(get_challenge[]).
+
+2. The message encM(MRZ[],Key_mrz[]) may be sent to the attacker at output {32}.
+attacker(encM(MRZ[],Key_mrz[])).
+
+3. Using the function n0 the attacker may obtain n0.
+attacker(n0).
+
+4. The message encM(MRZ[],Key_mrz[]) that the attacker may have by 2 may be received at input {5}.
+The message n0 that the attacker may have by 3 may be received at input {10}.
+The event Terminal_send_auth(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) (with occurrence name @occ16_1) may be executed at {16}.
+So the message (enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) may be sent to the attacker at output {17}.
+attacker((enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])))).
+
+5. By 4, the attacker may know (enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+Using the function 2-proj-2-tuple the attacker may obtain mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])).
+attacker(mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+
+6. By 4, the attacker may know (enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+Using the function 1-proj-2-tuple the attacker may obtain enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])).
+attacker(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[]))).
+
+7. By 6, the attacker may know enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])).
+By 5, the attacker may know mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])).
+Using the function 2-tuple the attacker may obtain (enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))).
+attacker((enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])))).
+
+8. The message get_challenge[] that the attacker may have by 1 may be received at input {35}.
+The message (enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) that the attacker may have by 7 may be received at input {39}.
+So event Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) may be executed at {43} in session @sid_2.
+inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_2).
+
+9. By 8, inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_2).
+The goal is reached, represented in the following fact:
+inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_2).
+
+10. The message get_challenge[] that the attacker may have by 1 may be received at input {35}.
+The message (enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) that the attacker may have by 7 may be received at input {39}.
+So event Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))) may be executed at {43} in session @sid_1.
+inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_1).
+
+11. By 10, inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_1).
+The goal is reached, represented in the following fact:
+inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_1).
+
+12. By 11, inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_1).
+By 9, inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_2).
+We have @occ43_1 ≠ @occ43_2.
+The goals for injectivity are reached, combined in the following fact:
+inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_1) && inj-event(Passeport_verif_Np(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mac(enc((Nt_2,n0,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[]))),@occ43_2).
+
+
+Initial state
+
+Additional knowledge of the attacker:
+c
+get_challenge
+n0
+--------------------------------------------------------------
+New processes:
+    new MRZ: mrz;
+    new Key_mrz: key;
+    (
+        !
+        in(c, read: mrz);
+        let Key_mrz_1: key = Key_mrz in
+        let MRZ_read: mrz = decM(read,Key_mrz_1) in
+        out(c, get_challenge);
+        in(c, Np: nonce);
+        new Nt: nonce;
+        new Kt: key;
+        let S: bitstring = (Nt,Np,Kt) in
+        let K_enc: key = mrz_to_Kenc(MRZ_read) in
+        let EncS: bitstring = enc(S,K_enc) in
+        let K_mac: key = mrz_to_Kmac(MRZ_read) in
+        let MacS: bitstring = mac(EncS,K_mac) in
+        event Terminal_send_auth(EncS,MacS);
+        out(c, (EncS,MacS));
+        in(c, (EncR: bitstring,MacR: bitstring));
+        if (verify_mac(EncR,MacR,K_mac) = true) then
+        let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+        if (Nt_r = Nt) then
+        if (Np_r = Np) then
+        in(c, (db_enc: bitstring,db_mac: bitstring));
+        let K_session: key = xor(Kp,Kt) in
+        let ks_mac: key = derive_mac(K_session) in
+        if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+        let ks_enc: key = derive_enc(K_session) in
+        let data: bitstring = dec(db_enc,ks_enc) in
+        0
+    ) | (
+        !
+        let Key_mrz_2: key = Key_mrz in
+        let MRZ_1: mrz = MRZ in
+        out(c, encM(MRZ_1,Key_mrz_2));
+        in(c, =get_challenge);
+        new Np_1: nonce;
+        let Np_2: nonce = n0 in
+        out(c, Np_2);
+        in(c, (EncS_1: bitstring,MacS_1: bitstring));
+        let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
+        if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+        let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
+        let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+        if (Np_check = Np_2) then
+        event Passeport_verif_Np(EncS_1,MacS_1);
+        new Kp_1: key;
+        let R: bitstring = (Np_2,Nt_1,Kp_1) in
+        let EncR_1: bitstring = enc(R,K_enc_1) in
+        let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+        out(c, (EncR_1,MacR_1));
+        let K_session_1: key = xor(Kp_1,Kt_1) in
+        let ks_enc_1: key = derive_enc(K_session_1) in
+        let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+        let ks_mac_1: key = derive_mac(K_session_1) in
+        let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+        out(c, (db_enc_1,db_mac_1))
+    )
+
+--------------------------------------------------------------
+1st process: new MRZ: mrz creating MRZ_2
+
+1st process: new Key_mrz: key creating Key_mrz_3
+
+1st process: Reduction |
+
+2nd process: Reduction ! 3 copy(ies)
+
+4th process: Beginning of process Passeport
+
+4th process: let Key_mrz_2: key = Key_mrz_3 succeeds
+
+4th process: let MRZ_1: mrz = MRZ_2 succeeds
+
+4th process: out(c, ~M) with ~M = encM(MRZ_2,Key_mrz_3) done
+
+Additional knowledge of the attacker:
+~M = encM(MRZ_2,Key_mrz_3)
+--------------------------------------------------------------
+3rd process: Beginning of process Passeport
+
+3rd process: let Key_mrz_2: key = Key_mrz_3 succeeds
+
+3rd process: let MRZ_1: mrz = MRZ_2 succeeds
+
+3rd process: out(c, ~M_1) with ~M_1 = encM(MRZ_2,Key_mrz_3) done
+
+2nd process: Beginning of process Passeport
+
+2nd process: let Key_mrz_2: key = Key_mrz_3 succeeds
+
+2nd process: let MRZ_1: mrz = MRZ_2 succeeds
+
+2nd process: out(c, ~M_2) with ~M_2 = encM(MRZ_2,Key_mrz_3) done
+
+1st process: Reduction ! 1 copy(ies)
+
+1st process: Beginning of process Terminal
+
+New processes:
+(
+    in(c, read: mrz);
+    let Key_mrz_1: key = Key_mrz_3 in
+    let MRZ_read: mrz = decM(read,Key_mrz_1) in
+    out(c, get_challenge);
+    in(c, Np: nonce);
+    new Nt: nonce;
+    new Kt: key;
+    let S: bitstring = (Nt,Np,Kt) in
+    let K_enc: key = mrz_to_Kenc(MRZ_read) in
+    let EncS: bitstring = enc(S,K_enc) in
+    let K_mac: key = mrz_to_Kmac(MRZ_read) in
+    let MacS: bitstring = mac(EncS,K_mac) in
+    event Terminal_send_auth(EncS,MacS);
+    out(c, (EncS,MacS));
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,K_mac) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    if (Nt_r = Nt) then
+    if (Np_r = Np) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+1st process: in(c, read: mrz) done with message ~M = encM(MRZ_2,Key_mrz_3)
+
+1st process: let Key_mrz_1: key = Key_mrz_3 succeeds
+
+1st process: let MRZ_read: mrz = MRZ_2 succeeds
+
+1st process: out(c, ~M_3) with ~M_3 = get_challenge done
+
+New processes:
+(
+    in(c, Np: nonce);
+    new Nt: nonce;
+    new Kt: key;
+    let S: bitstring = (Nt,Np,Kt) in
+    let K_enc: key = mrz_to_Kenc(MRZ_2) in
+    let EncS: bitstring = enc(S,K_enc) in
+    let K_mac: key = mrz_to_Kmac(MRZ_2) in
+    let MacS: bitstring = mac(EncS,K_mac) in
+    event Terminal_send_auth(EncS,MacS);
+    out(c, (EncS,MacS));
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,K_mac) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    if (Nt_r = Nt) then
+    if (Np_r = Np) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+1st process: in(c, Np: nonce) done with message n0
+
+1st process: new Nt: nonce creating Nt_3
+
+1st process: new Kt: key creating Kt_3
+
+1st process: let S: bitstring = (Nt_3,n0,Kt_3) succeeds
+
+1st process: let K_enc: key = mrz_to_Kenc(MRZ_2) succeeds
+
+1st process: let EncS: bitstring = enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)) succeeds
+
+1st process: let K_mac: key = mrz_to_Kmac(MRZ_2) succeeds
+
+1st process: let MacS: bitstring = mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) succeeds
+
+1st process: event Terminal_send_auth(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))) executed
+
+1st process: out(c, (~M_4,~M_5)) with ~M_4 = enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)), ~M_5 = mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) done
+
+Additional knowledge of the attacker:
+~M_5 = mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))
+~M_4 = enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2))
+--------------------------------------------------------------
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = n0) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+2nd process: in(c, =get_challenge) done with message get_challenge
+
+2nd process: new Np_1: nonce creating Np_3
+
+2nd process: let Np_2: nonce = n0 succeeds
+
+2nd process: out(c, ~M_6) with ~M_6 = n0 done
+
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = n0) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = n0) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (n0,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+2nd process: in(c, (EncS_1: bitstring,MacS_1: bitstring)) done with message (~M_4,~M_5) = (enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)))
+
+2nd process: let K_mac_1: key = mrz_to_Kmac(MRZ_2) succeeds
+
+2nd process: if (verify_mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)),mrz_to_Kmac(MRZ_2)) = true) succeeds
+
+2nd process: let K_enc_1: key = mrz_to_Kenc(MRZ_2) succeeds
+
+2nd process: let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = (Nt_3,n0,Kt_3) succeeds
+
+2nd process: if (n0 = n0) succeeds
+
+2nd process: event Passeport_verif_Np(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))) executed; it is a goal
+
+2nd process: new Kp_1: key creating Kp_2
+
+2nd process: let R: bitstring = (n0,Nt_3,Kp_2) succeeds
+
+2nd process: let EncR_1: bitstring = enc((n0,Nt_3,Kp_2),mrz_to_Kenc(MRZ_2)) succeeds
+
+2nd process: let MacR_1: bitstring = mac(enc((n0,Nt_3,Kp_2),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) succeeds
+
+2nd process: out(c, (~M_7,~M_8)) with ~M_7 = enc((n0,Nt_3,Kp_2),mrz_to_Kenc(MRZ_2)), ~M_8 = mac(enc((n0,Nt_3,Kp_2),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)) done
+
+Additional knowledge of the attacker:
+~M_8 = mac(enc((n0,Nt_3,Kp_2),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))
+~M_7 = enc((n0,Nt_3,Kp_2),mrz_to_Kenc(MRZ_2))
+--------------------------------------------------------------
+2nd process: let K_session_1: key = xor(Kp_2,Kt_3) succeeds
+
+2nd process: let ks_enc_1: key = derive_enc(xor(Kp_2,Kt_3)) succeeds
+
+2nd process: let db_enc_1: bitstring = enc(donnees_basiques,derive_enc(xor(Kp_2,Kt_3))) succeeds
+
+2nd process: let ks_mac_1: key = derive_mac(xor(Kp_2,Kt_3)) succeeds
+
+2nd process: let db_mac_1: bitstring = mac(enc(donnees_basiques,derive_enc(xor(Kp_2,Kt_3))),derive_mac(xor(Kp_2,Kt_3))) succeeds
+
+2nd process: out(c, (~M_9,~M_10)) with ~M_9 = enc(donnees_basiques,derive_enc(xor(Kp_2,Kt_3))), ~M_10 = mac(enc(donnees_basiques,derive_enc(xor(Kp_2,Kt_3))),derive_mac(xor(Kp_2,Kt_3))) done
+
+Additional knowledge of the attacker:
+~M_10 = mac(enc(donnees_basiques,derive_enc(xor(Kp_2,Kt_3))),derive_mac(xor(Kp_2,Kt_3)))
+~M_9 = enc(donnees_basiques,derive_enc(xor(Kp_2,Kt_3)))
+--------------------------------------------------------------
+2nd process: Reduction 0
+
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = n0) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+3rd process: in(c, =get_challenge) done with message get_challenge
+
+3rd process: new Np_1: nonce creating Np_4
+
+3rd process: let Np_2: nonce = n0 succeeds
+
+3rd process: out(c, ~M_11) with ~M_11 = n0 done
+
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = n0) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = n0) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (n0,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+3rd process: in(c, (EncS_1: bitstring,MacS_1: bitstring)) done with message (~M_4,~M_5) = (enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)))
+
+3rd process: let K_mac_1: key = mrz_to_Kmac(MRZ_2) succeeds
+
+3rd process: if (verify_mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2)),mrz_to_Kmac(MRZ_2)) = true) succeeds
+
+3rd process: let K_enc_1: key = mrz_to_Kenc(MRZ_2) succeeds
+
+3rd process: let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = (Nt_3,n0,Kt_3) succeeds
+
+3rd process: if (n0 = n0) succeeds
+
+3rd process: event Passeport_verif_Np(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))) executed; it is a goal
+
+New processes:
+(
+    in(c, (EncR: bitstring,MacR: bitstring));
+    if (verify_mac(EncR,MacR,mrz_to_Kmac(MRZ_2)) = true) then
+    let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,mrz_to_Kenc(MRZ_2)) in
+    if (Nt_r = Nt_3) then
+    if (Np_r = n0) then
+    in(c, (db_enc: bitstring,db_mac: bitstring));
+    let K_session: key = xor(Kp,Kt_3) in
+    let ks_mac: key = derive_mac(K_session) in
+    if (verify_mac(db_enc,db_mac,ks_mac) = true) then
+    let ks_enc: key = derive_enc(K_session) in
+    let data: bitstring = dec(db_enc,ks_enc) in
+    0
+) | (
+    in(c, =get_challenge);
+    new Np_1: nonce;
+    let Np_2: nonce = n0 in
+    out(c, Np_2);
+    in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    let K_mac_1: key = mrz_to_Kmac(MRZ_2) in
+    if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
+    let K_enc_1: key = mrz_to_Kenc(MRZ_2) in
+    let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    if (Np_check = Np_2) then
+    event Passeport_verif_Np(EncS_1,MacS_1);
+    new Kp_1: key;
+    let R: bitstring = (Np_2,Nt_1,Kp_1) in
+    let EncR_1: bitstring = enc(R,K_enc_1) in
+    let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_1) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+) | (
+    new Kp_1: key;
+    let R: bitstring = (n0,Nt_3,Kp_1) in
+    let EncR_1: bitstring = enc(R,mrz_to_Kenc(MRZ_2)) in
+    let MacR_1: bitstring = mac(EncR_1,mrz_to_Kmac(MRZ_2)) in
+    out(c, (EncR_1,MacR_1));
+    let K_session_1: key = xor(Kp_1,Kt_3) in
+    let ks_enc_1: key = derive_enc(K_session_1) in
+    let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
+    let ks_mac_1: key = derive_mac(K_session_1) in
+    let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
+    out(c, (db_enc_1,db_mac_1))
+)
+
+--------------------------------------------------------------
+The event Passeport_verif_Np(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))) is executed at {43} in copy a.
+The event Passeport_verif_Np(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mac(enc((Nt_3,n0,Kt_3),mrz_to_Kenc(MRZ_2)),mrz_to_Kmac(MRZ_2))) is executed at {43} in copy a_1.
+A trace has been found.
+RESULT inj-event(Passeport_verif_Np(e,m)) ==> inj-event(Terminal_send_auth(e,m)) is false.
+RESULT (but event(Passeport_verif_Np(e,m)) ==> event(Terminal_send_auth(e,m)) is true.)
+
+--------------------------------------------------------------
+Verification summary:
+
+Query inj-event(Passeport_verif_Np(e,m)) ==> inj-event(Terminal_send_auth(e,m)) is false.
+
+--------------------------------------------------------------

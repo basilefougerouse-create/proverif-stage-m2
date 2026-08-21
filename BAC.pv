@@ -167,7 +167,13 @@ let Terminal(Key_mrz: key) =
                 let k_seed = xor(k_ic, k_ifd) in
                 let ks_enc = derive_enc(k_seed) in
                 let ks_mac = derive_mac(k_seed) in
-                event Terminal_session_ok(ks_enc, ks_mac).
+                event Terminal_session_ok(ks_enc, ks_mac);
+
+                (* Etape 6 : reception des donnees et verification du MAC *)
+                in(c, (db_enc: bitstring, db_mac: bitstring));
+                if verify_mac(db_enc, db_mac, ks_mac) = true then
+                    let data = dec(db_enc, ks_enc) in
+                    0.
 
 (* ==================== PROCESSUS PASSEPORT ==================== *)
 
@@ -223,9 +229,11 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
             let ks_mac = derive_mac(k_seed) in
             event Passeport_session_ok(ks_enc, ks_mac);
 
-            (* Envoi des donnees basiques protegees par la cle de session *)
+            (* Etape 6 : envoi des donnees protegees en confidentialite ET integrite *)
+            let db_enc = enc(donnees_basiques, ks_enc) in
+            let db_mac = mac(db_enc, ks_mac) in
             event Passeport_send_data;
-            out(c, enc(donnees_basiques, ks_enc)).
+            out(c, (db_enc, db_mac)).
 
 (* ==================== PROCESSUS PRINCIPAL ==================== *)
 

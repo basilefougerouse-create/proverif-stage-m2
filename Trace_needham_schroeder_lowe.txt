@@ -1,0 +1,84 @@
+Process 0 (that is, the initial process):
+{1}out(c, pk(skA));
+{2}out(c, pk(skB));
+(
+    {3}!
+    {4}let skA_1: skey = skA in
+    {5}in(c, pkX: pkey);
+    {6}if (pkX ≠ pk(skA_1)) then
+    {7}new Na: bitstring;
+    {8}event A_start(pkX,Na);
+    {9}out(c, aenc((Na,pk(skA_1)),pkX));
+    {10}in(c, msg2: bitstring);
+    {11}let (=Na,Nb: bitstring,=pkX) = adec(msg2,skA_1) in
+    {12}event A_end(pkX,Na,Nb);
+    {13}out(c, aenc(Nb,pkX))
+) | (
+    {14}!
+    {15}let skB_1: skey = skB in
+    {16}in(c, msg1: bitstring);
+    {17}let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+    {18}if (pkX_1 ≠ pk(skB_1)) then
+    {19}new Nb_1: bitstring;
+    {20}event B_start(pkX_1,Na_1,Nb_1);
+    {21}out(c, aenc((Na_1,Nb_1,pk(skB_1)),pkX_1));
+    {22}in(c, msg3: bitstring);
+    {23}let =Nb_1 = adec(msg3,skB_1) in
+    {24}event B_end(pkX_1,Na_1)
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}out(c, pk(skA));
+{2}out(c, pk(skB));
+(
+    {3}!
+    {5}in(c, pkX: pkey);
+    {4}let skA_1: skey = skA in
+    {6}if (pkX ≠ pk(skA_1)) then
+    {7}new Na: bitstring;
+    {8}event A_start(pkX,Na);
+    {9}out(c, aenc((Na,pk(skA_1)),pkX));
+    {10}in(c, msg2: bitstring);
+    {11}let (=Na,Nb: bitstring,=pkX) = adec(msg2,skA_1) in
+    {12}event A_end(pkX,Na,Nb);
+    {13}out(c, aenc(Nb,pkX))
+) | (
+    {14}!
+    {16}in(c, msg1: bitstring);
+    {15}let skB_1: skey = skB in
+    {17}let (Na_1: bitstring,pkX_1: pkey) = adec(msg1,skB_1) in
+    {18}if (pkX_1 ≠ pk(skB_1)) then
+    {19}new Nb_1: bitstring;
+    {20}event B_start(pkX_1,Na_1,Nb_1);
+    {21}out(c, aenc((Na_1,Nb_1,pk(skB_1)),pkX_1));
+    {22}in(c, msg3: bitstring);
+    {23}let =Nb_1 = adec(msg3,skB_1) in
+    {24}event B_end(pkX_1,Na_1)
+)
+
+-- Query event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na)) in process 1.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na))      
+goal reachable: b-event(A_start(pk(skB[]),Na_2)) -> event(B_end(pk(skA[]),Na_2))
+Abbreviations:
+Na_2 = Na[pkX = pk(skB[]),!1 = @sid]
+RESULT event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na)) is true.
+-- Query event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb)) in process 1.
+Translating the process into Horn clauses...
+Completing...                                                                 
+Starting query event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb))
+goal reachable: b-event(B_start(pk(skA[]),Na_2,Nb_2)) -> event(A_end(pk(skB[]),Na_2,Nb_2))
+Abbreviations:
+Na_2 = Na[pkX = pk(skB[]),!1 = @sid]
+Nb_2 = Nb_1[msg1 = aenc((Na_2,pk(skA[])),pk(skB[])),!1 = @sid_1]
+RESULT event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb)) is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query event(B_end(pk(skA[]),na)) ==> event(A_start(pk(skB[]),na)) is true.
+
+Query event(A_end(pk(skB[]),na,nb)) ==> event(B_start(pk(skA[]),na,nb)) is true.
+
+--------------------------------------------------------------
