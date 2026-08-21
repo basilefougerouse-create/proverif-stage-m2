@@ -1,4 +1,3 @@
-(* Protocole 0 *)
 (*set traceDisplay = long.*)
 
 free c: channel.
