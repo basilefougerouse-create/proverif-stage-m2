@@ -10,27 +10,27 @@ Process 0 (that is, the initial process):
     {8}let K_mac: key = mrz_to_Kmac(MRZ_read) in
     {9}event Terminal_send_challenge;
     {10}out(c, get_challenge);
-    {11}in(c, rnd_ic: nonce);
-    {12}event Terminal_recv_rnd_ic(rnd_ic);
-    {13}new rnd_ifd: nonce;
-    {14}new k_ifd: key;
-    {15}let s: bitstring = (rnd_ifd,rnd_ic,k_ifd) in
-    {16}let e_ifd: bitstring = enc(s,K_enc) in
-    {17}let m_ifd: bitstring = mac(e_ifd,K_mac) in
-    {18}event Terminal_send_auth(rnd_ifd,rnd_ic);
-    {19}out(c, (e_ifd,m_ifd));
-    {20}in(c, (e_ic: bitstring,m_ic: bitstring));
-    {21}if (verify_mac(e_ic,m_ic,K_mac) = true) then
+    {11}in(c, Np: nonce);
+    {12}event Terminal_recv_rnd_ic(Np);
+    {13}new Nt: nonce;
+    {14}new Kt: key;
+    {15}let S: bitstring = (Nt,Np,Kt) in
+    {16}let EncS: bitstring = enc(S,K_enc) in
+    {17}let MacS: bitstring = mac(EncS,K_mac) in
+    {18}event Terminal_send_auth(Nt,Np);
+    {19}out(c, (EncS,MacS));
+    {20}in(c, (EncR: bitstring,MacR: bitstring));
+    {21}if (verify_mac(EncR,MacR,K_mac) = true) then
     {22}event Terminal_verif_mac;
-    {23}let (rnd_ic_r: nonce,rnd_ifd_r: nonce,k_ic: key) = dec(e_ic,K_enc) in
-    {24}if (rnd_ifd_r = rnd_ifd) then
-    {25}event Terminal_verif_rnd_ifd(rnd_ifd,rnd_ic);
-    {26}if (rnd_ic_r = rnd_ic) then
-    {27}event Terminal_verif_rnd_ic(rnd_ifd,rnd_ic);
-    {28}event Terminal_auth_Passeport(rnd_ifd,rnd_ic);
-    {29}let k_seed: key = xor(k_ic,k_ifd) in
-    {30}let ks_enc: key = derive_enc(k_seed) in
-    {31}let ks_mac: key = derive_mac(k_seed) in
+    {23}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    {24}if (Nt_r = Nt) then
+    {25}event Terminal_verif_rnd_ifd(Nt,Np);
+    {26}if (Np_r = Np) then
+    {27}event Terminal_verif_rnd_ic(Nt,Np);
+    {28}event Terminal_auth_Passeport(Nt,Np);
+    {29}let K_session: key = xor(Kp,Kt) in
+    {30}let ks_enc: key = derive_enc(K_session) in
+    {31}let ks_mac: key = derive_mac(K_session) in
     {32}event Terminal_session_ok(ks_enc,ks_mac);
     {33}in(c, (db_enc: bitstring,db_mac: bitstring));
     {34}if (verify_mac(db_enc,db_mac,ks_mac) = true) then
@@ -45,24 +45,24 @@ Process 0 (that is, the initial process):
     {41}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
     {42}in(c, =get_challenge);
     {43}event Passeport_recv_challenge;
-    {44}new rnd_ic_1: nonce;
-    {45}event Passeport_send_rnd_ic(rnd_ic_1);
-    {46}out(c, rnd_ic_1);
-    {47}in(c, (e_ifd_1: bitstring,m_ifd_1: bitstring));
-    {48}if (verify_mac(e_ifd_1,m_ifd_1,K_mac_1) = true) then
+    {44}new Np_1: nonce;
+    {45}event Passeport_send_rnd_ic;
+    {46}out(c, Np_1);
+    {47}in(c, (EncS_1: bitstring,MacS_1: bitstring));
+    {48}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
     {49}event Passeport_verif_mac;
-    {50}let (rnd_ifd_1: nonce,rnd_ic_check: nonce,k_ifd_1: key) = dec(e_ifd_1,K_enc_1) in
-    {51}if (rnd_ic_check = rnd_ic_1) then
-    {52}event Passeport_verif_rnd_ic(rnd_ifd_1,rnd_ic_1);
-    {53}new k_ic_1: key;
-    {54}let r: bitstring = (rnd_ic_1,rnd_ifd_1,k_ic_1) in
-    {55}let e_ic_1: bitstring = enc(r,K_enc_1) in
-    {56}let m_ic_1: bitstring = mac(e_ic_1,K_mac_1) in
-    {57}event Passeport_auth_Terminal(rnd_ifd_1,rnd_ic_1);
-    {58}out(c, (e_ic_1,m_ic_1));
-    {59}let k_seed_1: key = xor(k_ic_1,k_ifd_1) in
-    {60}let ks_enc_1: key = derive_enc(k_seed_1) in
-    {61}let ks_mac_1: key = derive_mac(k_seed_1) in
+    {50}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    {51}if (Np_check = Np_1) then
+    {52}event Passeport_verif_rnd_ic(Nt_1,Np_1);
+    {53}new Kp_1: key;
+    {54}let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    {55}let EncR_1: bitstring = enc(R,K_enc_1) in
+    {56}let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    {57}event Passeport_auth_Terminal(Nt_1,Np_1);
+    {58}out(c, (EncR_1,MacR_1));
+    {59}let K_session_1: key = xor(Kp_1,Kt_1) in
+    {60}let ks_enc_1: key = derive_enc(K_session_1) in
+    {61}let ks_mac_1: key = derive_mac(K_session_1) in
     {62}event Passeport_session_ok(ks_enc_1,ks_mac_1);
     {63}let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
     {64}let db_mac_1: bitstring = mac(db_enc_1,ks_mac_1) in
@@ -81,29 +81,29 @@ Process 0 (that is, the initial process):
     {7}let MRZ_read: mrz = decM(read,Key_mrz_1) in
     {10}event Terminal_send_challenge;
     {11}out(c, get_challenge);
-    {12}in(c, rnd_ic: nonce);
-    {13}event Terminal_recv_rnd_ic(rnd_ic);
-    {14}new rnd_ifd: nonce;
-    {15}new k_ifd: key;
-    {19}event Terminal_send_auth(rnd_ifd,rnd_ic);
-    {16}let s: bitstring = (rnd_ifd,rnd_ic,k_ifd) in
+    {12}in(c, Np: nonce);
+    {13}event Terminal_recv_rnd_ic(Np);
+    {14}new Nt: nonce;
+    {15}new Kt: key;
+    {19}event Terminal_send_auth(Nt,Np);
+    {16}let S: bitstring = (Nt,Np,Kt) in
     {8}let K_enc: key = mrz_to_Kenc(MRZ_read) in
-    {17}let e_ifd: bitstring = enc(s,K_enc) in
+    {17}let EncS: bitstring = enc(S,K_enc) in
     {9}let K_mac: key = mrz_to_Kmac(MRZ_read) in
-    {18}let m_ifd: bitstring = mac(e_ifd,K_mac) in
-    {20}out(c, (e_ifd,m_ifd));
-    {21}in(c, (e_ic: bitstring,m_ic: bitstring));
-    {22}if (verify_mac(e_ic,m_ic,K_mac) = true) then
+    {18}let MacS: bitstring = mac(EncS,K_mac) in
+    {20}out(c, (EncS,MacS));
+    {21}in(c, (EncR: bitstring,MacR: bitstring));
+    {22}if (verify_mac(EncR,MacR,K_mac) = true) then
     {23}event Terminal_verif_mac;
-    {24}let (rnd_ic_r: nonce,rnd_ifd_r: nonce,k_ic: key) = dec(e_ic,K_enc) in
-    {25}if (rnd_ifd_r = rnd_ifd) then
-    {26}event Terminal_verif_rnd_ifd(rnd_ifd,rnd_ic);
-    {27}if (rnd_ic_r = rnd_ic) then
-    {28}event Terminal_verif_rnd_ic(rnd_ifd,rnd_ic);
-    {29}event Terminal_auth_Passeport(rnd_ifd,rnd_ic);
-    {30}let k_seed: key = xor(k_ic,k_ifd) in
-    {32}let ks_mac: key = derive_mac(k_seed) in
-    {31}let ks_enc: key = derive_enc(k_seed) in
+    {24}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
+    {25}if (Nt_r = Nt) then
+    {26}event Terminal_verif_rnd_ifd(Nt,Np);
+    {27}if (Np_r = Np) then
+    {28}event Terminal_verif_rnd_ic(Nt,Np);
+    {29}event Terminal_auth_Passeport(Nt,Np);
+    {30}let K_session: key = xor(Kp,Kt) in
+    {32}let ks_mac: key = derive_mac(K_session) in
+    {31}let ks_enc: key = derive_enc(K_session) in
     {33}event Terminal_session_ok(ks_enc,ks_mac);
     {34}in(c, (db_enc: bitstring,db_mac: bitstring));
     {35}if (verify_mac(db_enc,db_mac,ks_mac) = true) then
@@ -117,26 +117,26 @@ Process 0 (that is, the initial process):
     {41}out(c, encM(MRZ_1,Key_mrz_2));
     {44}in(c, =get_challenge);
     {45}event Passeport_recv_challenge;
-    {46}new rnd_ic_1: nonce;
-    {47}event Passeport_send_rnd_ic(rnd_ic_1);
-    {48}out(c, rnd_ic_1);
-    {49}in(c, (e_ifd_1: bitstring,m_ifd_1: bitstring));
+    {46}new Np_1: nonce;
+    {47}event Passeport_send_rnd_ic;
+    {48}out(c, Np_1);
+    {49}in(c, (EncS_1: bitstring,MacS_1: bitstring));
     {43}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
-    {50}if (verify_mac(e_ifd_1,m_ifd_1,K_mac_1) = true) then
+    {50}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
     {51}event Passeport_verif_mac;
     {42}let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
-    {52}let (rnd_ifd_1: nonce,rnd_ic_check: nonce,k_ifd_1: key) = dec(e_ifd_1,K_enc_1) in
-    {53}if (rnd_ic_check = rnd_ic_1) then
-    {54}event Passeport_verif_rnd_ic(rnd_ifd_1,rnd_ic_1);
-    {55}new k_ic_1: key;
-    {59}event Passeport_auth_Terminal(rnd_ifd_1,rnd_ic_1);
-    {56}let r: bitstring = (rnd_ic_1,rnd_ifd_1,k_ic_1) in
-    {57}let e_ic_1: bitstring = enc(r,K_enc_1) in
-    {58}let m_ic_1: bitstring = mac(e_ic_1,K_mac_1) in
-    {60}out(c, (e_ic_1,m_ic_1));
-    {61}let k_seed_1: key = xor(k_ic_1,k_ifd_1) in
-    {63}let ks_mac_1: key = derive_mac(k_seed_1) in
-    {62}let ks_enc_1: key = derive_enc(k_seed_1) in
+    {52}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
+    {53}if (Np_check = Np_1) then
+    {54}event Passeport_verif_rnd_ic(Nt_1,Np_1);
+    {55}new Kp_1: key;
+    {59}event Passeport_auth_Terminal(Nt_1,Np_1);
+    {56}let R: bitstring = (Np_1,Nt_1,Kp_1) in
+    {57}let EncR_1: bitstring = enc(R,K_enc_1) in
+    {58}let MacR_1: bitstring = mac(EncR_1,K_mac_1) in
+    {60}out(c, (EncR_1,MacR_1));
+    {61}let K_session_1: key = xor(Kp_1,Kt_1) in
+    {63}let ks_mac_1: key = derive_mac(K_session_1) in
+    {62}let ks_enc_1: key = derive_enc(K_session_1) in
     {64}event Passeport_session_ok(ks_enc_1,ks_mac_1);
     {67}event Passeport_send_data;
     {65}let db_enc_1: bitstring = enc(donnees_basiques,ks_enc_1) in
@@ -158,95 +158,95 @@ RESULT not attacker(donnees_basiques[]) is true.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Terminal_auth_Passeport(n1,n2)) ==> event(Passeport_auth_Terminal(n1,n2))
-goal reachable: b-event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2)) -> event(Terminal_auth_Passeport(rnd_ifd_2,rnd_ic_2))
+goal reachable: b-event(Passeport_auth_Terminal(Nt_2,Np_2)) -> event(Terminal_auth_Passeport(Nt_2,Np_2))
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT event(Terminal_auth_Passeport(n1,n2)) ==> event(Passeport_auth_Terminal(n1,n2)) is true.
 -- Query inj-event(Terminal_auth_Passeport(n1,n2)) ==> inj-event(Passeport_auth_Terminal(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query inj-event(Terminal_auth_Passeport(n1,n2)) ==> inj-event(Passeport_auth_Terminal(n1,n2))
-goal reachable: b-inj-event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2),@occ59_1) -> inj-event(Terminal_auth_Passeport(rnd_ifd_2,rnd_ic_2),@occ29_1)
+goal reachable: b-inj-event(Passeport_auth_Terminal(Nt_2,Np_2),@occ59_1) -> inj-event(Terminal_auth_Passeport(Nt_2,Np_2),@occ29_1)
 The hypothesis occurs strictly before the conclusion.
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ifd_2 = k_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ic_2 = k_ic_1[m_ifd_1 = mac(enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),e_ifd_1 = enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
-@occ29_1 = @occ29[m_ic = mac(enc((rnd_ic_2,rnd_ifd_2,k_ic_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),e_ic = enc((rnd_ic_2,rnd_ifd_2,k_ic_2),mrz_to_Kenc(MRZ[])),rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-@occ59_1 = @occ59[m_ifd_1 = mac(enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),e_ifd_1 = enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kt_2 = Kt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kp_2 = Kp_1[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+@occ29_1 = @occ29[MacR = mac(enc((Np_2,Nt_2,Kp_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncR = enc((Np_2,Nt_2,Kp_2),mrz_to_Kenc(MRZ[])),Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+@occ59_1 = @occ59[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
 RESULT inj-event(Terminal_auth_Passeport(n1,n2)) ==> inj-event(Passeport_auth_Terminal(n1,n2)) is true.
 -- Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Passeport_auth_Terminal(n1,n2)) ==> event(Terminal_send_auth(n1,n2))
-goal reachable: b-event(Terminal_send_auth(rnd_ifd_2,rnd_ic_2)) -> event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2))
+goal reachable: b-event(Terminal_send_auth(Nt_2,Np_2)) -> event(Passeport_auth_Terminal(Nt_2,Np_2))
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT event(Passeport_auth_Terminal(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) is true.
 -- Query inj-event(Passeport_auth_Terminal(n1,n2)) ==> inj-event(Terminal_send_auth(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query inj-event(Passeport_auth_Terminal(n1,n2)) ==> inj-event(Terminal_send_auth(n1,n2))
-goal reachable: b-inj-event(Terminal_send_auth(rnd_ifd_2,rnd_ic_2),@occ19_1) -> inj-event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2),@occ59_2)
+goal reachable: b-inj-event(Terminal_send_auth(Nt_2,Np_2),@occ19_1) -> inj-event(Passeport_auth_Terminal(Nt_2,Np_2),@occ59_2)
 The hypothesis occurs strictly before the conclusion.
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ifd_2 = k_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-@occ59_2 = @occ59_1[m_ifd_1 = mac(enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),e_ifd_1 = enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
-@occ19_1 = @occ19[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kt_2 = Kt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+@occ59_2 = @occ59_1[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+@occ19_1 = @occ19[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT inj-event(Passeport_auth_Terminal(n1,n2)) ==> inj-event(Terminal_send_auth(n1,n2)) is true.
 -- Query event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2))
-goal reachable: b-event(Terminal_send_auth(rnd_ifd_2,rnd_ic_2)) -> event(Terminal_verif_rnd_ifd(rnd_ifd_2,rnd_ic_2))
+goal reachable: b-event(Terminal_send_auth(Nt_2,Np_2)) -> event(Terminal_verif_rnd_ifd(Nt_2,Np_2))
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) is true.
 -- Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2))
-goal reachable: b-event(Passeport_verif_rnd_ic(rnd_ifd_2,rnd_ic_2)) -> event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2))
+goal reachable: b-event(Passeport_verif_rnd_ic(Nt_2,Np_2)) -> event(Passeport_auth_Terminal(Nt_2,Np_2))
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2)) is true.
 -- Query event(Terminal_session_ok(ks1,ks2)) ==> event(Terminal_auth_Passeport(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Terminal_session_ok(ks1,ks2)) ==> event(Terminal_auth_Passeport(n1,n2))
-goal reachable: b-event(Terminal_auth_Passeport(rnd_ifd_2,rnd_ic_2)) -> event(Terminal_session_ok(derive_enc(xor(k_ic_2,k_ifd_2)),derive_mac(xor(k_ic_2,k_ifd_2))))
+goal reachable: b-event(Terminal_auth_Passeport(Nt_2,Np_2)) -> event(Terminal_session_ok(derive_enc(xor(Kp_2,Kt_2)),derive_mac(xor(Kp_2,Kt_2))))
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ifd_2 = k_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ic_2 = k_ic_1[m_ifd_1 = mac(enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),e_ifd_1 = enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kt_2 = Kt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kp_2 = Kp_1[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
 RESULT event(Terminal_session_ok(ks1,ks2)) ==> event(Terminal_auth_Passeport(n1,n2)) is true.
 -- Query event(Passeport_session_ok(ks1,ks2)) ==> event(Passeport_auth_Terminal(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Passeport_session_ok(ks1,ks2)) ==> event(Passeport_auth_Terminal(n1,n2))
-goal reachable: b-event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2)) -> event(Passeport_session_ok(derive_enc(xor(k_ic_2,k_ifd_2)),derive_mac(xor(k_ic_2,k_ifd_2))))
+goal reachable: b-event(Passeport_auth_Terminal(Nt_2,Np_2)) -> event(Passeport_session_ok(derive_enc(xor(Kp_2,Kt_2)),derive_mac(xor(Kp_2,Kt_2))))
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ifd_2 = k_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-k_ic_2 = k_ic_1[m_ifd_1 = mac(enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),e_ifd_1 = enc((rnd_ifd_2,rnd_ic_2,k_ifd_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kt_2 = Kt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Kp_2 = Kp_1[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
 RESULT event(Passeport_session_ok(ks1,ks2)) ==> event(Passeport_auth_Terminal(n1,n2)) is true.
 -- Query event(Passeport_send_data) ==> event(Passeport_auth_Terminal(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
 Starting query event(Passeport_send_data) ==> event(Passeport_auth_Terminal(n1,n2))
-goal reachable: b-event(Passeport_auth_Terminal(rnd_ifd_2,rnd_ic_2)) -> event(Passeport_send_data)
+goal reachable: b-event(Passeport_auth_Terminal(Nt_2,Np_2)) -> event(Passeport_send_data)
 Abbreviations:
-rnd_ic_2 = rnd_ic_1[!1 = @sid]
-rnd_ifd_2 = rnd_ifd[rnd_ic = rnd_ic_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
+Np_2 = Np_1[!1 = @sid]
+Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT event(Passeport_send_data) ==> event(Passeport_auth_Terminal(n1,n2)) is true.
 
 --------------------------------------------------------------

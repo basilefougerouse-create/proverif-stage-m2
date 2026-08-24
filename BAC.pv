@@ -1,3 +1,6 @@
+set reconstructTrace = true.
+set traceDisplay = long.
+
 free c: channel.
 
 type nonce.
@@ -44,7 +47,7 @@ event Terminal_session_ok(key, key).
 
 (* Passeport *)
 event Passeport_recv_challenge.
-event Passeport_send_rnd_ic(nonce).
+event Passeport_send_rnd_ic.
 event Passeport_verif_mac.
 event Passeport_verif_rnd_ic(nonce, nonce).
 event Passeport_auth_Terminal(nonce, nonce).
@@ -82,12 +85,12 @@ query n1: nonce, n2: nonce;
 
 (* --- Integrite du protocole --- *)
 
-(* Le terminal verifie bien que le passeport a retourne le bon RND.IFD *)
+(* Le terminal verifie bien que le passeport a retourne le bon Nt *)
 query n1: nonce, n2: nonce;
     event(Terminal_verif_rnd_ifd(n1, n2)) ==>
     event(Terminal_send_auth(n1, n2)).
 
-(* Le passeport verifie bien que le terminal a retourne le bon RND.IC *)
+(* Le passeport verifie bien que le terminal a retourne le bon Np *)
 query n1: nonce, n2: nonce;
     event(Passeport_auth_Terminal(n1, n2)) ==>
     event(Passeport_verif_rnd_ic(n1, n2)).
@@ -124,49 +127,49 @@ let Terminal(Key_mrz: key) =
     event Terminal_send_challenge;
     out(c, get_challenge);
 
-    (* Etape 2 : reception de RND.IC *)
-    in(c, rnd_ic: nonce);
-    event Terminal_recv_rnd_ic(rnd_ic);
+    (* Etape 2 : reception de Np *)
+    in(c, Np: nonce);
+    event Terminal_recv_rnd_ic(Np);
 
-    (* Etape 3 : generation de RND.IFD et K.IFD *)
-    new rnd_ifd: nonce;
-    new k_ifd:   key;
+    (* Etape 3 : generation de Nt et Kt *)
+    new Nt: nonce;
+    new Kt: key;
 
-    (* Construction de S = RND.IFD || RND.IC || K.IFD *)
-    let s     = (rnd_ifd, rnd_ic, k_ifd) in
+    (* Construction de S = Nt || Np || Kt *)
+    let S = (Nt, Np, Kt) in
 
     (* Chiffrement et MAC *)
-    let e_ifd = enc(s, K_enc) in
-    let m_ifd = mac(e_ifd, K_mac) in
+    let EncS = enc(S, K_enc) in
+    let MacS = mac(EncS, K_mac) in
 
-    event Terminal_send_auth(rnd_ifd, rnd_ic);
+    event Terminal_send_auth(Nt, Np);
 
-    (* Envoi de EIFD || MIFD *)
-    out(c, (e_ifd, m_ifd));
+    (* Envoi de EncS || MacS *)
+    out(c, (EncS, MacS));
 
-    (* Etape 4 : reception de EIC || MIC *)
-    in(c, (e_ic: bitstring, m_ic: bitstring));
+    (* Etape 4 : reception de EncR || MacR *)
+    in(c, (EncR: bitstring, MacR: bitstring));
 
     (* Etape 4a : verification du MAC *)
-    if verify_mac(e_ic, m_ic, K_mac) = true then
+    if verify_mac(EncR, MacR, K_mac) = true then
         event Terminal_verif_mac;
 
-        (* Etape 4b : dechiffrement de EIC *)
-        let (rnd_ic_r: nonce, rnd_ifd_r: nonce, k_ic: key) = dec(e_ic, K_enc) in
+        (* Etape 4b : dechiffrement de EncR *)
+        let (Np_r: nonce, Nt_r: nonce, Kp: key) = dec(EncR, K_enc) in
 
-        (* Etape 4c : verification de RND.IFD *)
-        if rnd_ifd_r = rnd_ifd then
-            event Terminal_verif_rnd_ifd(rnd_ifd, rnd_ic);
+        (* Etape 4c : verification de Nt *)
+        if Nt_r = Nt then
+            event Terminal_verif_rnd_ifd(Nt, Np);
 
-            (* Etape 4d : verification de RND.IC *)
-            if rnd_ic_r = rnd_ic then
-                event Terminal_verif_rnd_ic(rnd_ifd, rnd_ic);
-                event Terminal_auth_Passeport(rnd_ifd, rnd_ic);
+            (* Etape 4d : verification de Np *)
+            if Np_r = Np then
+                event Terminal_verif_rnd_ic(Nt, Np);
+                event Terminal_auth_Passeport(Nt, Np);
 
                 (* Etape 5 : derivation des cles de session *)
-                let k_seed = xor(k_ic, k_ifd) in
-                let ks_enc = derive_enc(k_seed) in
-                let ks_mac = derive_mac(k_seed) in
+                let K_session = xor(Kp, Kt) in
+                let ks_enc = derive_enc(K_session) in
+                let ks_mac = derive_mac(K_session) in
                 event Terminal_session_ok(ks_enc, ks_mac);
 
                 (* Etape 6 : reception des donnees et verification du MAC *)
@@ -189,47 +192,47 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
     in(c, =get_challenge);
     event Passeport_recv_challenge;
 
-    (* Generation et envoi de RND.IC *)
-    new rnd_ic: nonce;
-    event Passeport_send_rnd_ic(rnd_ic);
-    out(c, rnd_ic);
+    (* Generation et envoi de Np *)
+    new Np: nonce;
+    event Passeport_send_rnd_ic;
+    out(c, Np);
 
-    (* Etape 3 : reception de EIFD || MIFD *)
-    in(c, (e_ifd: bitstring, m_ifd: bitstring));
+    (* Etape 3 : reception de EncS || MacS *)
+    in(c, (EncS: bitstring, MacS: bitstring));
 
     (* Etape 3a : verification du MAC *)
-    if verify_mac(e_ifd, m_ifd, K_mac) = true then
+    if verify_mac(EncS, MacS, K_mac) = true then
         event Passeport_verif_mac;
 
-        (* Etape 3b : dechiffrement de EIFD *)
-        let (rnd_ifd: nonce, rnd_ic_check: nonce, k_ifd: key) = dec(e_ifd, K_enc) in
+        (* Etape 3b : dechiffrement de EncS *)
+        let (Nt: nonce, Np_check: nonce, Kt: key) = dec(EncS, K_enc) in
 
-        (* Etape 3c : verification de RND.IC *)
-        if rnd_ic_check = rnd_ic then
-            event Passeport_verif_rnd_ic(rnd_ifd, rnd_ic);
+        (* Etape 3c : verification de Np *)
+        if Np_check = Np then
+            event Passeport_verif_rnd_ic(Nt, Np);
 
-            (* Etape 3d : generation de K.IC *)
-            new k_ic: key;
+            (* Etape 3d : generation de Kp *)
+            new Kp: key;
 
-            (* Construction de R = RND.IC || RND.IFD || K.IC *)
-            let r    = (rnd_ic, rnd_ifd, k_ic) in
+            (* Construction de R = Np || Nt || Kp *)
+            let R = (Np, Nt, Kp) in
 
             (* Chiffrement et MAC *)
-            let e_ic = enc(r, K_enc) in
-            let m_ic = mac(e_ic, K_mac) in
+            let EncR = enc(R, K_enc) in
+            let MacR = mac(EncR, K_mac) in
 
-            event Passeport_auth_Terminal(rnd_ifd, rnd_ic);
+            event Passeport_auth_Terminal(Nt, Np);
 
-            (* Envoi de EIC || MIC *)
-            out(c, (e_ic, m_ic));
+            (* Envoi de EncR || MacR *)
+            out(c, (EncR, MacR));
 
             (* Etape 5 : derivation des cles de session *)
-            let k_seed = xor(k_ic, k_ifd) in
-            let ks_enc = derive_enc(k_seed) in
-            let ks_mac = derive_mac(k_seed) in
+            let K_session = xor(Kp, Kt) in
+            let ks_enc = derive_enc(K_session) in
+            let ks_mac = derive_mac(K_session) in
             event Passeport_session_ok(ks_enc, ks_mac);
 
-            (* Etape 6 : envoi des donnees protegees en confidentialite ET integrite *)
+            (* Etape 6 : envoi des donnees protegees en confidentialite et integrite *)
             let db_enc = enc(donnees_basiques, ks_enc) in
             let db_mac = mac(db_enc, ks_mac) in
             event Passeport_send_data;
