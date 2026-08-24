@@ -274,4 +274,4 @@ Query event(Passeport_session_ok(ks1,ks2)) ==> event(Passeport_auth_Terminal(n1,
 
 Query event(Passeport_send_data) ==> event(Passeport_auth_Terminal(n1,n2)) is true.
 
---------------------------------------------------------------
+-------------------------------------------------------------- 

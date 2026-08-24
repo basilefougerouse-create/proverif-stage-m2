@@ -244,4 +244,4 @@ process
     new MRZ: mrz;
     new Key_mrz: key;
     !Terminal(Key_mrz) |
-    !Passeport(MRZ, Key_mrz)
+    !Passeport(MRZ, Key_mrz) 
