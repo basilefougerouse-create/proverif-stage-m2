@@ -11,7 +11,7 @@ Process 0 (that is, the initial process):
     {9}event Terminal_send_challenge;
     {10}out(c, get_challenge);
     {11}in(c, Np: nonce);
-    {12}event Terminal_recv_rnd_ic(Np);
+    {12}event Terminal_recv_Np(Np);
     {13}new Nt: nonce;
     {14}new Kt: key;
     {15}let S: bitstring = (Nt,Np,Kt) in
@@ -24,9 +24,9 @@ Process 0 (that is, the initial process):
     {22}event Terminal_verif_mac;
     {23}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
     {24}if (Nt_r = Nt) then
-    {25}event Terminal_verif_rnd_ifd(Nt,Np);
+    {25}event Terminal_verif_Nt(Nt,Np);
     {26}if (Np_r = Np) then
-    {27}event Terminal_verif_rnd_ic(Nt,Np);
+    {27}event Terminal_verif_Np(Nt,Np);
     {28}event Terminal_auth_Passeport(Nt,Np);
     {29}let K_session: key = xor(Kp,Kt) in
     {30}let ks_enc: key = derive_enc(K_session) in
@@ -46,14 +46,14 @@ Process 0 (that is, the initial process):
     {42}in(c, =get_challenge);
     {43}event Passeport_recv_challenge;
     {44}new Np_1: nonce;
-    {45}event Passeport_send_rnd_ic;
+    {45}event Passeport_send_Np;
     {46}out(c, Np_1);
     {47}in(c, (EncS_1: bitstring,MacS_1: bitstring));
     {48}if (verify_mac(EncS_1,MacS_1,K_mac_1) = true) then
     {49}event Passeport_verif_mac;
     {50}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
     {51}if (Np_check = Np_1) then
-    {52}event Passeport_verif_rnd_ic(Nt_1,Np_1);
+    {52}event Passeport_verif_Np(Nt_1,Np_1);
     {53}new Kp_1: key;
     {54}let R: bitstring = (Np_1,Nt_1,Kp_1) in
     {55}let EncR_1: bitstring = enc(R,K_enc_1) in
@@ -82,7 +82,7 @@ Process 0 (that is, the initial process):
     {10}event Terminal_send_challenge;
     {11}out(c, get_challenge);
     {12}in(c, Np: nonce);
-    {13}event Terminal_recv_rnd_ic(Np);
+    {13}event Terminal_recv_Np(Np);
     {14}new Nt: nonce;
     {15}new Kt: key;
     {19}event Terminal_send_auth(Nt,Np);
@@ -97,9 +97,9 @@ Process 0 (that is, the initial process):
     {23}event Terminal_verif_mac;
     {24}let (Np_r: nonce,Nt_r: nonce,Kp: key) = dec(EncR,K_enc) in
     {25}if (Nt_r = Nt) then
-    {26}event Terminal_verif_rnd_ifd(Nt,Np);
+    {26}event Terminal_verif_Nt(Nt,Np);
     {27}if (Np_r = Np) then
-    {28}event Terminal_verif_rnd_ic(Nt,Np);
+    {28}event Terminal_verif_Np(Nt,Np);
     {29}event Terminal_auth_Passeport(Nt,Np);
     {30}let K_session: key = xor(Kp,Kt) in
     {32}let ks_mac: key = derive_mac(K_session) in
@@ -118,7 +118,7 @@ Process 0 (that is, the initial process):
     {44}in(c, =get_challenge);
     {45}event Passeport_recv_challenge;
     {46}new Np_1: nonce;
-    {47}event Passeport_send_rnd_ic;
+    {47}event Passeport_send_Np;
     {48}out(c, Np_1);
     {49}in(c, (EncS_1: bitstring,MacS_1: bitstring));
     {43}let K_mac_1: key = mrz_to_Kmac(MRZ_1) in
@@ -127,7 +127,7 @@ Process 0 (that is, the initial process):
     {42}let K_enc_1: key = mrz_to_Kenc(MRZ_1) in
     {52}let (Nt_1: nonce,Np_check: nonce,Kt_1: key) = dec(EncS_1,K_enc_1) in
     {53}if (Np_check = Np_1) then
-    {54}event Passeport_verif_rnd_ic(Nt_1,Np_1);
+    {54}event Passeport_verif_Np(Nt_1,Np_1);
     {55}new Kp_1: key;
     {59}event Passeport_auth_Terminal(Nt_1,Np_1);
     {56}let R: bitstring = (Np_1,Nt_1,Kp_1) in
@@ -199,24 +199,24 @@ Kt_2 = Kt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 @occ59_2 = @occ59_1[MacS_1 = mac(enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),mrz_to_Kmac(MRZ[])),EncS_1 = enc((Nt_2,Np_2,Kt_2),mrz_to_Kenc(MRZ[])),!1 = @sid]
 @occ19_1 = @occ19[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
 RESULT inj-event(Passeport_auth_Terminal(n1,n2)) ==> inj-event(Terminal_send_auth(n1,n2)) is true.
--- Query event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) in process 1.
+-- Query event(Terminal_verif_Nt(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
-Starting query event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2))
-goal reachable: b-event(Terminal_send_auth(Nt_2,Np_2)) -> event(Terminal_verif_rnd_ifd(Nt_2,Np_2))
+Starting query event(Terminal_verif_Nt(n1,n2)) ==> event(Terminal_send_auth(n1,n2))
+goal reachable: b-event(Terminal_send_auth(Nt_2,Np_2)) -> event(Terminal_verif_Nt(Nt_2,Np_2))
 Abbreviations:
 Np_2 = Np_1[!1 = @sid]
 Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-RESULT event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) is true.
--- Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2)) in process 1.
+RESULT event(Terminal_verif_Nt(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) is true.
+-- Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_Np(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
-Starting query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2))
-goal reachable: b-event(Passeport_verif_rnd_ic(Nt_2,Np_2)) -> event(Passeport_auth_Terminal(Nt_2,Np_2))
+Starting query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_Np(n1,n2))
+goal reachable: b-event(Passeport_verif_Np(Nt_2,Np_2)) -> event(Passeport_auth_Terminal(Nt_2,Np_2))
 Abbreviations:
 Np_2 = Np_1[!1 = @sid]
 Nt_2 = Nt[Np = Np_2,read = encM(MRZ[],Key_mrz[]),!1 = @sid_1]
-RESULT event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2)) is true.
+RESULT event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_Np(n1,n2)) is true.
 -- Query event(Terminal_session_ok(ks1,ks2)) ==> event(Terminal_auth_Passeport(n1,n2)) in process 1.
 Translating the process into Horn clauses...
 Completing...                                                                 
@@ -264,9 +264,9 @@ Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Terminal_send_auth(n1,n2))
 
 Query inj-event(Passeport_auth_Terminal(n1,n2)) ==> inj-event(Terminal_send_auth(n1,n2)) is true.
 
-Query event(Terminal_verif_rnd_ifd(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) is true.
+Query event(Terminal_verif_Nt(n1,n2)) ==> event(Terminal_send_auth(n1,n2)) is true.
 
-Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_rnd_ic(n1,n2)) is true.
+Query event(Passeport_auth_Terminal(n1,n2)) ==> event(Passeport_verif_Np(n1,n2)) is true.
 
 Query event(Terminal_session_ok(ks1,ks2)) ==> event(Terminal_auth_Passeport(n1,n2)) is true.
 
@@ -274,4 +274,4 @@ Query event(Passeport_session_ok(ks1,ks2)) ==> event(Passeport_auth_Terminal(n1,
 
 Query event(Passeport_send_data) ==> event(Passeport_auth_Terminal(n1,n2)) is true.
 
--------------------------------------------------------------- 
+--------------------------------------------------------------

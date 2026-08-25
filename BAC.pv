@@ -37,19 +37,19 @@ free get_challenge:    bitstring.
 
 (* Terminal *)
 event Terminal_send_challenge.
-event Terminal_recv_rnd_ic(nonce).
+event Terminal_recv_Np(nonce).
 event Terminal_send_auth(nonce, nonce).
 event Terminal_verif_mac.
-event Terminal_verif_rnd_ifd(nonce, nonce).
-event Terminal_verif_rnd_ic(nonce, nonce).
+event Terminal_verif_Nt(nonce, nonce).
+event Terminal_verif_Np(nonce, nonce).
 event Terminal_auth_Passeport(nonce, nonce).
 event Terminal_session_ok(key, key).
 
 (* Passeport *)
 event Passeport_recv_challenge.
-event Passeport_send_rnd_ic.
+event Passeport_send_Np.
 event Passeport_verif_mac.
-event Passeport_verif_rnd_ic(nonce, nonce).
+event Passeport_verif_Np(nonce, nonce).
 event Passeport_auth_Terminal(nonce, nonce).
 event Passeport_session_ok(key, key).
 event Passeport_send_data.
@@ -87,13 +87,13 @@ query n1: nonce, n2: nonce;
 
 (* Le terminal verifie bien que le passeport a retourne le bon Nt *)
 query n1: nonce, n2: nonce;
-    event(Terminal_verif_rnd_ifd(n1, n2)) ==>
+    event(Terminal_verif_Nt(n1, n2)) ==>
     event(Terminal_send_auth(n1, n2)).
 
 (* Le passeport verifie bien que le terminal a retourne le bon Np *)
 query n1: nonce, n2: nonce;
     event(Passeport_auth_Terminal(n1, n2)) ==>
-    event(Passeport_verif_rnd_ic(n1, n2)).
+    event(Passeport_verif_Np(n1, n2)).
 
 (* --- Etablissement de session --- *)
 
@@ -129,7 +129,7 @@ let Terminal(Key_mrz: key) =
 
     (* Etape 2 : reception de Np *)
     in(c, Np: nonce);
-    event Terminal_recv_rnd_ic(Np);
+    event Terminal_recv_Np(Np);
 
     (* Etape 3 : generation de Nt et Kt *)
     new Nt: nonce;
@@ -159,11 +159,11 @@ let Terminal(Key_mrz: key) =
 
         (* Etape 4c : verification de Nt *)
         if Nt_r = Nt then
-            event Terminal_verif_rnd_ifd(Nt, Np);
+            event Terminal_verif_Nt(Nt, Np);
 
             (* Etape 4d : verification de Np *)
             if Np_r = Np then
-                event Terminal_verif_rnd_ic(Nt, Np);
+                event Terminal_verif_Np(Nt, Np);
                 event Terminal_auth_Passeport(Nt, Np);
 
                 (* Etape 5 : derivation des cles de session *)
@@ -194,7 +194,7 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
 
     (* Generation et envoi de Np *)
     new Np: nonce;
-    event Passeport_send_rnd_ic;
+    event Passeport_send_Np;
     out(c, Np);
 
     (* Etape 3 : reception de EncS || MacS *)
@@ -209,7 +209,7 @@ let Passeport(MRZ: mrz, Key_mrz: key) =
 
         (* Etape 3c : verification de Np *)
         if Np_check = Np then
-            event Passeport_verif_rnd_ic(Nt, Np);
+            event Passeport_verif_Np(Nt, Np);
 
             (* Etape 3d : generation de Kp *)
             new Kp: key;
@@ -244,4 +244,4 @@ process
     new MRZ: mrz;
     new Key_mrz: key;
     !Terminal(Key_mrz) |
-    !Passeport(MRZ, Key_mrz) 
+    !Passeport(MRZ, Key_mrz)
